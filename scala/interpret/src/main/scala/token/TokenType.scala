@@ -30,4 +30,3 @@ object TokenType extends Enum[TokenType] {
   object FUNCTION extends TokenType { override def toString = "FUNCTION" }
   object LET extends TokenType { override def toString = "LET" }
 }
-
