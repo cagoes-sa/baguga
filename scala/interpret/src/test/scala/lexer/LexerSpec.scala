@@ -25,7 +25,10 @@ class LexerSpec extends AnyFlatSpec {
         val resultToken = lexer.nextToken()
         (resultToken, expectedToken) match {
           case (Some(t1), Some(t2)) =>
-            assert(t1.tokenType == t2.tokenType && t1.literal == t2.literal)
+            assert(
+              t1.tokenType == t2.tokenType && t1.literal == t2.literal,
+              s"expected token $t2 and got $t1"
+            )
           case (None, Some(_)) => fail("Expected token and got EOF")
           case (Some(_), None) => fail("Expected EOF and got token")
         }
