@@ -12,17 +12,19 @@ class LexerSpec extends AnyFlatSpec {
       Token(TokenType.LPAREN, "("),
       Token(TokenType.RPAREN, ")"),
       Token(TokenType.LBRACE, "{"),
-      Token(TokenType.RBRACE, ")"),
+      Token(TokenType.RBRACE, "}"),
       Token(TokenType.COMMA, ","),
       Token(TokenType.SEMICOLON, ";"),
       Token(TokenType.EOF, "")
     ).map(Some(_))
 
-    val lexer = Lexer(input)
+    var lexer: Lexer = Lexer(input)
 
     expected.foreach { expectedToken =>
       {
+        lexer = lexer.readChar
         val resultToken = lexer.nextToken()
+
         (resultToken, expectedToken) match {
           case (Some(t1), Some(t2)) =>
             assert(
