@@ -31,7 +31,12 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
 
   final val identifierLookupTable: Map[String, TokenType] = Map(
     "fn" -> TokenType.FUNCTION,
-    "let" -> TokenType.LET
+    "return" -> TokenType.RETURN,
+    "true" -> TokenType.TRUE,
+    "false" -> TokenType.FALSE,
+    "let" -> TokenType.LET,
+    "if" -> TokenType.IF,
+    "else" -> TokenType.ELSE
   )
   def lookUpIdentifier(identifier: String): TokenType = {
     identifierLookupTable.getOrElse(identifier, TokenType.IDENT)
@@ -56,6 +61,8 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
           (Some(Token(TokenType.RPAREN, ch.toChar.toString)), next)
         case ',' =>
           (Some(Token(TokenType.COMMA, ch.toChar.toString)), next)
+        case '-' =>
+          (Some(Token(TokenType.MINUS, ch.toChar.toString)), next)
         case '+' =>
           (Some(Token(TokenType.PLUS, ch.toChar.toString)), next)
         case '{' =>
@@ -66,6 +73,10 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
           (Some(Token(TokenType.ASTERISK, ch.toChar.toString)), next)
         case '/' =>
           (Some(Token(TokenType.SLASH, ch.toChar.toString)), next)
+        case '<' =>
+          (Some(Token(TokenType.LT, ch.toChar.toString)), next)
+        case '>' =>
+          (Some(Token(TokenType.GT, ch.toChar.toString)), next)
         case '!' =>
           (Some(Token(TokenType.BANG, ch.toChar.toString)), next)
         case 0 =>
