@@ -62,6 +62,12 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
           (Some(Token(TokenType.LBRACE, ch.toChar.toString)), next)
         case '}' =>
           (Some(Token(TokenType.RBRACE, ch.toChar.toString)), next)
+        case '*' =>
+          (Some(Token(TokenType.ASTERISK, ch.toChar.toString)), next)
+        case '/' =>
+          (Some(Token(TokenType.SLASH, ch.toChar.toString)), next)
+        case '!' =>
+          (Some(Token(TokenType.BANG, ch.toChar.toString)), next)
         case 0 =>
           (Some(Token(TokenType.EOF, "")), next)
         case ch if isDigit(ch) =>

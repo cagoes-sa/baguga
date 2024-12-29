@@ -28,16 +28,27 @@ class LexerSpec extends AnyFlatSpec {
     assert(lexer.nextToken._1.contains(Token(TokenType.IDENT, "input")))
   }
 
-  "nextToken - more complex case case" should "pass without problems and match all its tokens" in {
+  "nextToken - more complex case" should "pass without problems and match all its tokens" in {
     val input =
       """let five = 5;
-        let ten = 10;
+let ten = 10;
 
-        let add = fn(x, y) {
-          x + y;
-        };
+let add = fn(x, y) {
+  x + y;
+};
 
-        let result = add(five, ten);""".stripMargin
+let result = add(five, ten);
+!-/*5;
+5 < 10 > 5;
+
+if (5 < 10) {
+	return true;
+} else {
+	return false;
+}
+
+10 == 10;
+10 != 9;""".stripMargin
 
     val expected: Seq[Token] = Seq(
       Token(TokenType.LET, "let"),
@@ -75,6 +86,43 @@ class LexerSpec extends AnyFlatSpec {
       Token(TokenType.COMMA, ","),
       Token(TokenType.IDENT, "ten"),
       Token(TokenType.RPAREN, ")"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.BANG, "!"),
+      Token(TokenType.MINUS, "-"),
+      Token(TokenType.SLASH, "/"),
+      Token(TokenType.ASTERISK, "*"),
+      Token(TokenType.INT, "5"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.INT, "5"),
+      Token(TokenType.LT, "<"),
+      Token(TokenType.INT, "10"),
+      Token(TokenType.GT, ">"),
+      Token(TokenType.INT, "5"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.IF, "if"),
+      Token(TokenType.LPAREN, "("),
+      Token(TokenType.INT, "5"),
+      Token(TokenType.LT, "<"),
+      Token(TokenType.INT, "10"),
+      Token(TokenType.RPAREN, ")"),
+      Token(TokenType.LBRACE, "{"),
+      Token(TokenType.RETURN, "return"),
+      Token(TokenType.TRUE, "true"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.RBRACE, "}"),
+      Token(TokenType.ELSE, "else"),
+      Token(TokenType.LBRACE, "{"),
+      Token(TokenType.RETURN, "return"),
+      Token(TokenType.FALSE, "false"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.RBRACE, "}"),
+      Token(TokenType.INT, "10"),
+      Token(TokenType.EQ, "=="),
+      Token(TokenType.INT, "10"),
+      Token(TokenType.SEMICOLON, ";"),
+      Token(TokenType.INT, "10"),
+      Token(TokenType.NOT_EQ, "!="),
+      Token(TokenType.INT, "9"),
       Token(TokenType.SEMICOLON, ";"),
       Token(TokenType.EOF, "")
     )

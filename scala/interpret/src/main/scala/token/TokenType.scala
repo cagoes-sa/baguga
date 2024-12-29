@@ -16,6 +16,14 @@ object TokenType extends Enum[TokenType] {
   // Operators
   object ASSIGN extends TokenType { override def toString = "=" }
   object PLUS extends TokenType { override def toString = "+" }
+  object BANG extends TokenType { override def toString = "!" }
+  object MINUS extends TokenType { override def toString = "-" }
+  object SLASH extends TokenType { override def toString = "/" }
+  object ASTERISK extends TokenType { override def toString = "*" }
+  object EQ extends TokenType { override def toString = "==" }
+  object GT extends TokenType { override def toString = ">" }
+  object LT extends TokenType { override def toString = "<" }
+  object NOT_EQ extends TokenType { override def toString = "!=" }
 
   // Delimiters
   object COMMA extends TokenType { override def toString = "," }
@@ -29,4 +37,12 @@ object TokenType extends Enum[TokenType] {
   // Keywords
   object FUNCTION extends TokenType { override def toString = "FUNCTION" }
   object LET extends TokenType { override def toString = "LET" }
+  object ELSE extends TokenType { override def toString = "else" }
+  object IF extends TokenType { override def toString = "if" }
+  object RETURN extends TokenType { override def toString = "return" }
+
+  // Booleans
+  object TRUE extends TokenType { override def toString = "true" }
+  object FALSE extends TokenType { override def toString = "false" }
+
 }
