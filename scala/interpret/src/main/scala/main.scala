@@ -1,5 +1,7 @@
-object main{
+import repl.REPL
+
+object main {
   def main(args: Array[String]): Unit = {
-    println("Hello from main of class")
+    REPL.run()
   }
 }

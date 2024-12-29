@@ -36,8 +36,9 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0)
 
   def getTokens: Iterator[Option[Token]] = {
     token match {
-      case (Some(token), _: Lexer) if token.tokenType != TokenType.EOF =>
-        Iterator(Some(token)) ++ next.getTokens
+      case (Some(token), nextLexer: Lexer)
+          if token.tokenType != TokenType.EOF =>
+        Iterator(Some(token)) ++ nextLexer.getTokens
       case _ =>
         Iterator.empty[Option[Token]]
     }
