@@ -18,6 +18,15 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
     }
   }
 
+  def readDigit: (String, Lexer) = {
+    if (isDigit(ch)) {
+      val readIdentifierNext = next.readDigit
+      (ch.toChar.toString ++ readIdentifierNext._1, readIdentifierNext._2)
+    } else {
+      ("", this)
+    }
+  }
+
   def next: Lexer = Lexer(input, readPosition, readChar)
 
   final val identifierLookupTable: Map[String, TokenType] = Map(
@@ -55,6 +64,14 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
           (Some(Token(TokenType.RBRACE, ch.toChar.toString)), next)
         case 0 =>
           (Some(Token(TokenType.EOF, "")), next)
+        case ch if isDigit(ch) =>
+          val (identifier: String, nextLexer: Lexer) = readDigit
+          (
+            Some(
+              Token(TokenType.INT, identifier)
+            ),
+            nextLexer
+          )
         case ch if isLetter(ch) =>
           val (identifier: String, nextLexer: Lexer) = readIdentifier
           (
@@ -71,6 +88,10 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
 
   def isLetter(ch: Byte): Boolean = {
     'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+  }
+
+  def isDigit(ch: Byte): Boolean = {
+    '0' <= ch && ch <= '9'
   }
 
 }
