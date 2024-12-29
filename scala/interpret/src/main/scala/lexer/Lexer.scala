@@ -42,7 +42,7 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
     identifierLookupTable.getOrElse(identifier, TokenType.IDENT)
   }
 
-  def isWhitespace(c: Byte): Boolean = {
+  def isWhitespace(ch: Byte): Boolean = {
     ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
   }
 
@@ -52,7 +52,18 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
     } else {
       ch match {
         case '=' =>
-          (Some(Token(TokenType.ASSIGN, ch.toChar.toString)), next)
+          if (next.ch == '=') {
+            (
+              Some(
+                Token(
+                  TokenType.EQ,
+                  ch.toChar.toString ++ next.ch.toChar.toString
+                )
+              ),
+              next.next
+            )
+          } else
+            (Some(Token(TokenType.ASSIGN, ch.toChar.toString)), next)
         case ';' =>
           (Some(Token(TokenType.SEMICOLON, ch.toChar.toString)), next)
         case '(' =>
@@ -78,7 +89,19 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
         case '>' =>
           (Some(Token(TokenType.GT, ch.toChar.toString)), next)
         case '!' =>
-          (Some(Token(TokenType.BANG, ch.toChar.toString)), next)
+          if (next.ch == '=') {
+            (
+              Some(
+                Token(
+                  TokenType.NOT_EQ,
+                  ch.toChar.toString ++ next.ch.toChar.toString
+                )
+              ),
+              next.next
+            )
+          } else {
+            (Some(Token(TokenType.BANG, ch.toChar.toString)), next)
+          }
         case 0 =>
           (Some(Token(TokenType.EOF, "")), next)
         case ch if isDigit(ch) =>
