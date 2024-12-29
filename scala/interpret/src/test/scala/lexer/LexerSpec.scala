@@ -6,7 +6,7 @@ import token.{Token, TokenType}
 class LexerSpec extends AnyFlatSpec {
   "nextToken - simple case" should "pass without problems and match all its tokens" in {
     val input = "=+(){},;"
-    val expected: Seq[Option[Token]] = Seq(
+    val expected: Seq[Token] = Seq(
       Token(TokenType.ASSIGN, "="),
       Token(TokenType.PLUS, "+"),
       Token(TokenType.LPAREN, "("),
@@ -16,30 +16,15 @@ class LexerSpec extends AnyFlatSpec {
       Token(TokenType.COMMA, ","),
       Token(TokenType.SEMICOLON, ";"),
       Token(TokenType.EOF, "")
-    ).map(Some(_))
+    )
 
-    var (_, lexer: Lexer) = Lexer(input).nextToken
+    LexerTestInstance.test(input, expected)
 
-    expected.foreach { expectedToken =>
-      {
-        val (resultToken: Option[Token], nlexer: Lexer) = lexer.nextToken
-        lexer = nlexer
-        (resultToken, expectedToken) match {
-          case (Some(t1), Some(t2)) =>
-            assert(
-              t1.tokenType == t2.tokenType && t1.literal == t2.literal,
-              s"expected token $t2 and got $t1"
-            )
-          case (None, Some(_)) => fail("Expected token and got EOF")
-          case (Some(_), None) => fail("Expected EOF and got token")
-        }
-      }
-    }
   }
 
   "readIdentifier" should "" in {
     val input = "input a a a a a"
-    var (_, lexer: Lexer) = Lexer(input).nextToken
+    val (_, lexer: Lexer) = Lexer(input).nextToken
     assert(lexer.nextToken._1.contains(Token(TokenType.IDENT, "input")))
   }
 
@@ -54,7 +39,7 @@ class LexerSpec extends AnyFlatSpec {
 
         let result = add(five, ten);""".stripMargin
 
-    val expected: Seq[Option[Token]] = Seq(
+    val expected: Seq[Token] = Seq(
       Token(TokenType.LET, "let"),
       Token(TokenType.IDENT, "five"),
       Token(TokenType.ASSIGN, "="),
@@ -92,25 +77,9 @@ class LexerSpec extends AnyFlatSpec {
       Token(TokenType.RPAREN, ")"),
       Token(TokenType.SEMICOLON, ";"),
       Token(TokenType.EOF, "")
-    ).map(Some(_))
+    )
 
-    var (_, lexer: Lexer) = Lexer(input).nextToken
-
-    expected.foreach { expectedToken =>
-      {
-        val (resultToken: Option[Token], nlexer: Lexer) = lexer.nextToken
-        lexer = nlexer
-        (resultToken, expectedToken) match {
-          case (Some(t1), Some(t2)) =>
-            assert(
-              t1.tokenType == t2.tokenType && t1.literal == t2.literal,
-              s"expected token $t2 and got $t1"
-            )
-          case (None, Some(_)) => fail("Expected token and got EOF")
-          case (Some(_), None) => fail("Expected EOF and got token")
-        }
-      }
-    }
+    LexerTestInstance.test(input, expected)
 
   }
 
