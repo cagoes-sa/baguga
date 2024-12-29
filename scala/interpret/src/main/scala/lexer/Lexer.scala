@@ -1,18 +1,21 @@
 package lexer
 
+import lexer.Lexer.identifierLookupTable
 import token.{Token, TokenType}
 
-case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
+case class Lexer(input: String, position: Int = -1, ch: Byte = 0)
+    extends CharIdentification {
 
-  def readPosition: Int = position + 1
-  def readChar: Byte = {
-    if (readPosition >= input.length) 0 else input(readPosition).toByte
+  def nextPosition: Int = position + 1
+  def nextChar: Byte = {
+    if (nextPosition >= input.length) 0 else input(nextPosition).toByte
   }
+  def next: Lexer = Lexer(input, nextPosition, nextChar)
 
   def readIdentifier: (String, Lexer) = {
     if (isLetter(ch)) {
-      val readIdentifierNext = next.readIdentifier
-      (ch.toChar.toString ++ readIdentifierNext._1, readIdentifierNext._2)
+      val (identifierTail: String, nextLexer: Lexer) = next.readIdentifier
+      (ch.toChar.toString ++ identifierTail, nextLexer)
     } else {
       ("", this)
     }
@@ -20,35 +23,30 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
 
   def readDigit: (String, Lexer) = {
     if (isDigit(ch)) {
-      val readIdentifierNext = next.readDigit
-      (ch.toChar.toString ++ readIdentifierNext._1, readIdentifierNext._2)
+      val (identifierTail: String, nextLexer: Lexer) = next.readDigit
+      (ch.toChar.toString ++ identifierTail, nextLexer)
     } else {
       ("", this)
     }
   }
 
-  def next: Lexer = Lexer(input, readPosition, readChar)
-
-  final val identifierLookupTable: Map[String, TokenType] = Map(
-    "fn" -> TokenType.FUNCTION,
-    "return" -> TokenType.RETURN,
-    "true" -> TokenType.TRUE,
-    "false" -> TokenType.FALSE,
-    "let" -> TokenType.LET,
-    "if" -> TokenType.IF,
-    "else" -> TokenType.ELSE
-  )
   def lookUpIdentifier(identifier: String): TokenType = {
     identifierLookupTable.getOrElse(identifier, TokenType.IDENT)
   }
 
-  def isWhitespace(ch: Byte): Boolean = {
-    ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
+  def getTokens: Iterator[Option[Token]] = {
+    token match {
+      case (Some(token), _: Lexer) if token.tokenType != TokenType.EOF =>
+        Iterator(Some(token)) ++ next.getTokens
+      case _ =>
+        Iterator.empty[Option[Token]]
+    }
+
   }
 
-  def nextToken: (Option[Token], Lexer) = {
+  def token: (Option[Token], Lexer) = {
     if (isWhitespace(ch)) {
-      next.nextToken
+      next.token
     } else {
       ch match {
         case '=' =>
@@ -126,12 +124,17 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0) {
 
   }
 
-  def isLetter(ch: Byte): Boolean = {
-    'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
-  }
+}
 
-  def isDigit(ch: Byte): Boolean = {
-    '0' <= ch && ch <= '9'
-  }
+object Lexer {
 
+  final val identifierLookupTable: Map[String, TokenType] = Map(
+    "fn" -> TokenType.FUNCTION,
+    "return" -> TokenType.RETURN,
+    "true" -> TokenType.TRUE,
+    "false" -> TokenType.FALSE,
+    "let" -> TokenType.LET,
+    "if" -> TokenType.IF,
+    "else" -> TokenType.ELSE
+  )
 }

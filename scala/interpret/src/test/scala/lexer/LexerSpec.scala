@@ -24,8 +24,8 @@ class LexerSpec extends AnyFlatSpec {
 
   "readIdentifier" should "" in {
     val input = "input a a a a a"
-    val (_, lexer: Lexer) = Lexer(input).nextToken
-    assert(lexer.nextToken._1.contains(Token(TokenType.IDENT, "input")))
+    val (_, lexer: Lexer) = Lexer(input).token
+    assert(lexer.token._1.contains(Token(TokenType.IDENT, "input")))
   }
 
   "nextToken - more complex case" should "pass without problems and match all its tokens" in {
