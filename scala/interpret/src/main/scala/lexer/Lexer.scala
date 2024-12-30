@@ -3,6 +3,8 @@ package lexer
 import lexer.Lexer.identifierLookupTable
 import token.{Token, TokenType}
 
+import scala.annotation.tailrec
+
 case class Lexer(input: String, position: Int = -1, ch: Byte = 0)
     extends CharIdentification {
 
@@ -35,13 +37,19 @@ case class Lexer(input: String, position: Int = -1, ch: Byte = 0)
   }
 
   def getTokens: Iterator[Option[Token]] = {
-    token match {
-      case (Some(token), nextLexer: Lexer)
-          if token.tokenType != TokenType.EOF =>
-        Iterator(Some(token)) ++ nextLexer.getTokens
-      case (Some(Token(TokenType.EOF, literal)), _: Lexer) =>
-        Iterator(Some(Token(TokenType.EOF, literal)))
+    @tailrec def recursiveGetToken(
+        lexer: Lexer,
+        currentIterator: Iterator[Option[Token]] = Iterator.empty[Option[Token]]
+    ): Iterator[Option[Token]] = {
+      lexer.token match {
+        case (Some(token), nextLexer: Lexer)
+            if token.tokenType != TokenType.EOF =>
+          recursiveGetToken(nextLexer, currentIterator ++ Iterator(Some(token))  )
+        case (Some(Token(TokenType.EOF, literal)), _: Lexer) =>
+          currentIterator ++ Iterator(Some(Token(TokenType.EOF, literal)))
+      }
     }
+    recursiveGetToken(this)
 
   }
 
