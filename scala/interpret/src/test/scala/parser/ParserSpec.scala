@@ -40,6 +40,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val expectedIdentifiers = Seq("x", "y", "foobar")
     program match {
       case Some(program) =>
+        println(program.statements)
         if (program.statements.length != expectedLength) {
           fail(
             s"Program contained only ${program.statements.length} statements, should be $expectedLength"
