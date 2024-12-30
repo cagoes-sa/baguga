@@ -1,9 +1,7 @@
-package parser.ast
+package parser
 
 import lexer.Lexer
 import token.Token
-
-case class TokenReader(current: Option[Token], peek: Option[Token])
 
 case class Parser(lexer: Lexer) {
   def tokenIterator: Iterator[Option[Token]] = lexer.getTokens
