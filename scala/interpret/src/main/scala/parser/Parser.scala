@@ -1,5 +1,6 @@
 package parser
 
+import errors.ParserError
 import lexer.Lexer
 import parser.ast.expressions.Identifier
 import parser.ast.statements.LetStatement
@@ -32,57 +33,83 @@ case class Parser(lexer: Lexer) {
   def parseLetStatement(
       c: Token,
       optionP: Option[Token]
-  ): Option[LetStatement] = {
+  ): (Option[LetStatement], Seq[ParserError]) = {
     val token = c
-    val identifier = optionP match {
+    val (identifier, errors) = optionP match {
       case Some(identifierToken)
           if identifierToken.tokenType == TokenType.IDENT =>
-        Some(Identifier(identifierToken, identifierToken.literal))
-      case _ => None
+        (
+          Some(Identifier(identifierToken, identifierToken.literal)),
+          Seq.empty[ParserError]
+        )
+      case Some(otherToken) =>
+        (
+          None,
+          Seq(
+            ParserError(
+              s"Token $otherToken should be from the identifier type, but got ${otherToken.tokenType}"
+            )
+          )
+        )
     }
 
     getTokenPointers match {
       case (_, Some(assignToken))
           if assignToken.tokenType == TokenType.ASSIGN =>
         waitUntil(TokenType.SEMICOLON) match {
-          case None => None
+          case None => (None, errors)
           case Some((ct, pt)) =>
-            Some(LetStatement(token, identifier.get, identifier.get))
+            (Some(LetStatement(token, identifier.get, identifier.get)), errors)
         }
 
-      case _ => None
+      case (_, Some(otherToken)) =>
+        waitUntil(TokenType.SEMICOLON)
+        (
+          None,
+          errors ++ Seq(
+            ParserError(s"Expected an ASSIGN token, but got $otherToken")
+          )
+        )
 
     }
   }
 
-  def parseStatement: Option[Statement] = {
+  def parseStatement: (Option[Statement], Seq[ParserError]) = {
     val (currentToken: Option[Token], peakToken: Option[Token]) =
       getTokenPointers
     (currentToken, peakToken) match {
-      case (Some(c), _) if c.tokenType == TokenType.EOF => None
+      case (Some(c), _) if c.tokenType == TokenType.EOF =>
+        (None, Seq.empty[ParserError])
       case (Some(c), optionP) =>
-        println("c: ", c)
         c.tokenType match {
           case TokenType.LET => parseLetStatement(c, optionP)
-          case _             => None
+          case _             => (None, Seq.empty[ParserError])
         }
-      case (None, None) => None
+      case (None, None) => (None, Seq.empty[ParserError])
     }
   }
 
-  def parseProgram: Option[Program] = {
+  def parseProgram: (Program, Seq[ParserError]) = {
     @tailrec
     def parseProgramIteration(
-        program: Program = Program(Seq.empty[Statement])
-    ): Program = {
-      parseStatement match {
-        case None => program
-        case Some(statement) =>
-          println("iteration")
-          parseProgramIteration(Program(program.statements :+ statement))
+        program: Program = Program(Seq.empty[Statement]),
+        errors: Seq[ParserError] = Seq.empty[ParserError]
+    ): (Program, Seq[ParserError]) = {
+      if (tokenIterator.hasNext) {
+        parseStatement match {
+          case (None, statementErrors) =>
+            parseProgramIteration(program, errors ++ statementErrors)
+          case (Some(statement), statementErrors) =>
+            parseProgramIteration(
+              Program(program.statements :+ statement),
+              errors ++ statementErrors
+            )
+        }
+      } else {
+        (program, errors)
       }
     }
-    Some(parseProgramIteration())
+    parseProgramIteration()
   }
 
 }

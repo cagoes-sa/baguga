@@ -1,8 +1,9 @@
 package parser
 
+import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
-import parser.ast.Statement
+import parser.ast.{Program, Statement}
 import token.Token
 import token.TokenType._
 
@@ -39,8 +40,11 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val expectedLength = 3
     val expectedIdentifiers = Seq("x", "y", "foobar")
     program match {
-      case Some(program) =>
-        println(program.statements)
+      case (program: Program, errors: Seq[ParserError]) =>
+        if (errors.nonEmpty) {
+          println("Got the following errors: ")
+          println(errors.map(_.message).mkString("\n"))
+        }
         if (program.statements.length != expectedLength) {
           fail(
             s"Program contained only ${program.statements.length} statements, should be $expectedLength"
@@ -50,7 +54,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
           case (statement: Statement, identifier: String) =>
             testLetStatement(statement, identifier)
         }
-      case None => fail("parse program returned none")
+      case _ => fail("parse program returned none")
     }
   }
 
