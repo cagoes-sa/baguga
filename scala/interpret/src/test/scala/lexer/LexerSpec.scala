@@ -128,7 +128,10 @@ class LexerSpec extends AnyFlatSpec {
       Token(TokenType.EOF, "")
     )
 
-    LexerTestInstance.test("==", Seq(Token(TokenType.EQ, "==")))
+    LexerTestInstance.test(
+      "==",
+      Seq(Token(TokenType.EQ, "=="), Token(TokenType.EOF, ""))
+    )
     LexerTestInstance.test(input, expected)
 
   }
