@@ -4,12 +4,12 @@ import lexer.Lexer
 import token.Token
 
 case class Parser(lexer: Lexer) {
-  def tokenIterator: Iterator[Option[Token]] = lexer.getTokens
-  def tokenReader: TokenReader =
-    (tokenIterator.nextOption(), tokenIterator.nextOption()) match {
-      case (Some(optionT1), Some(optionT2)) => TokenReader(optionT1, optionT2)
-      case (Some(optionT1), None)           => TokenReader(optionT1, None)
-      case (None, _)                        => TokenReader(None, None)
+  lazy val tokenIterator: Iterator[Seq[Option[Token]]] =
+    lexer.getTokens.sliding(2).withPadding(None)
+  def getTokenPointers: (Option[Token], Option[Token]) =
+    tokenIterator.nextOption() match {
+      case Some(Seq(current, peak)) => (current, peak)
+      case None                     => (None, None)
     }
 
 }
