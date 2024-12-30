@@ -1,6 +1,7 @@
 package parser
 
 import lexer.Lexer
+import parser.ast.Program
 import token.Token
 
 case class Parser(lexer: Lexer) {
@@ -11,5 +12,7 @@ case class Parser(lexer: Lexer) {
       case Some(Seq(current, peak)) => (current, peak)
       case None                     => (None, None)
     }
+
+  def parseProgram: Option[Program] = None
 
 }
