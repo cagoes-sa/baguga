@@ -3,8 +3,8 @@ package parser
 import errors.ParserError
 import lexer.Lexer
 import parser.ast.expressions.Identifier
-import parser.ast.statements.LetStatement
-import parser.ast.{Program, Statement}
+import parser.ast.statements.{LetStatement, ReturnStatement}
+import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 
 import scala.annotation.tailrec
@@ -29,6 +29,37 @@ case class Parser(lexer: Lexer) {
       case _ => waitUntil(t)
 
     }
+
+  def parseReturnStatement(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[ReturnStatement], Seq[ParserError]) = {
+    val token = c
+
+    token match {
+      case returnToken: Token if returnToken.tokenType == TokenType.RETURN =>
+        waitUntil(TokenType.SEMICOLON)
+        (
+          Some(
+            ReturnStatement(
+              token,
+              new Expression {
+                override def tokenLiteral: String = ""
+
+                override def expressionNode(): Unit = {}
+              }
+            )
+          ),
+          Seq.empty[ParserError]
+        )
+      case _ =>
+        (
+          None,
+          Seq(ParserError(s"Expected a return statement, got ${c.tokenType}"))
+        )
+    }
+
+  }
 
   def parseLetStatement(
       c: Token,
@@ -82,8 +113,9 @@ case class Parser(lexer: Lexer) {
         (None, Seq.empty[ParserError])
       case (Some(c), optionP) =>
         c.tokenType match {
-          case TokenType.LET => parseLetStatement(c, optionP)
-          case _             => (None, Seq.empty[ParserError])
+          case TokenType.LET    => parseLetStatement(c, optionP)
+          case TokenType.RETURN => parseReturnStatement(c, optionP)
+          case _                => (None, Seq.empty[ParserError])
         }
       case (None, None) => (None, Seq.empty[ParserError])
     }

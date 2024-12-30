@@ -58,4 +58,30 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
+  "ReturnStatement" should "work" in {
+    val input =
+      """
+      return 5;
+      return 10;
+      return 993322;""".stripMargin
+    val lexer = Lexer(input).next
+    val parser = Parser(lexer)
+    val program = parser.parseProgram
+    val expectedLength = 3
+    program match {
+      case (program: Program, errors: Seq[ParserError]) =>
+        if (errors.nonEmpty) {
+          println("Got the following errors: ")
+          println(errors.map(_.message).mkString("\n"))
+        }
+        if (program.statements.length != expectedLength) {
+          fail(
+            s"Program contained only ${program.statements.length} statements, should be $expectedLength"
+          )
+        }
+        assert(!program.statements.exists(_.tokenLiteral != "return"))
+      case _ => fail("parse program returned none")
+    }
+  }
+
 }
