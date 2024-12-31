@@ -2,14 +2,27 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
-import parser.ast.expressions.Identifier
-import parser.ast.statements.{ExpressionStatement, LetStatement, ReturnStatement}
+import parser.ast.expressions.{ExpressionOrdering, Identifier}
+import parser.ast.statements.{
+  ExpressionStatement,
+  LetStatement,
+  ReturnStatement
+}
 import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 
 import scala.annotation.tailrec
 
-case class Parser(lexer: Lexer) extends ExpressionsParser {
+object ParserFns {
+  def prefixParseFns: Map[TokenType, (Token, Option[Token]) => Expression] =
+    Map(
+      TokenType.IDENT -> ((c: Token, optionP: Option[Token]) =>
+        Identifier(c, c.literal)
+      )
+    )
+}
+
+case class Parser(lexer: Lexer) {
 
   lazy val tokenIterator: Iterator[Seq[Option[Token]]] =
     lexer.getTokens.sliding(2).withPadding(None)
@@ -107,11 +120,33 @@ case class Parser(lexer: Lexer) extends ExpressionsParser {
     }
   }
 
+  def parseExpression(
+      precedence: ExpressionOrdering,
+      c: Token
+  ): Option[Expression] = {
+    ParserFns.prefixParseFns.get(c.tokenType) match {
+      case Some(fn) => Some(fn(c, None))
+      case None     => None
+    }
+
+  }
+
   def parseExpressionStatement(
       c: Token,
       optionP: Option[Token]
   ): (Option[ExpressionStatement], Seq[ParserError]) = {
-    (None, Seq.empty[ParserError])
+    val expressionStatement =
+      parseExpression(ExpressionOrdering.Lowest, c) match {
+        case Some(expression: Expression) =>
+          optionP match {
+            case Some(token) if token.tokenType == TokenType.SEMICOLON =>
+              getTokenPointers
+              Some(ExpressionStatement(c, Some(expression)))
+            case _ => None
+          }
+        case None => None
+      }
+    (expressionStatement, Seq.empty[ParserError])
 
   }
 
