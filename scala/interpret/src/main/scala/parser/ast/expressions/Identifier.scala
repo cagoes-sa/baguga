@@ -10,4 +10,6 @@ case class Identifier(
   override def expressionNode(): Unit = {}
 
   override def tokenLiteral: String = token.literal
+
+  override def string: String = value
 }

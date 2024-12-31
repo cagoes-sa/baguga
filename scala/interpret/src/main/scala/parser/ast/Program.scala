@@ -7,4 +7,8 @@ case class Program(statements: Seq[Statement]) extends Node {
       case None                       => ""
     }
   }
+
+  override def string: String = {
+    statements.map(_.string).mkString
+  }
 }
