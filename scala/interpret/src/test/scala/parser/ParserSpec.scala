@@ -3,7 +3,7 @@ package parser
 import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
-import parser.ast.expressions.Identifier
+import parser.ast.expressions.{Identifier, IntegerLiteral}
 import parser.ast.statements.ExpressionStatement
 import parser.ast.{Program, Statement}
 import token.Token
@@ -101,6 +101,27 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
             assert(ident.value == "foobar")
             assert(ident.tokenLiteral == "foobar")
           case _ => fail("Statement expression should be identifier")
+        }
+
+      case _ => fail("Statement is not an expression statement")
+    }
+  }
+
+  "ExpressionParser - integer literals" should "Be correctly parsed" in {
+    val input = "420;"
+
+    val l = Lexer(input).next
+    val p = Parser(l)
+    val (program: Program, errors: Seq[ParserError]) = p.parseProgram
+
+    assert(program.statements.length == 1)
+    program.statements.head match {
+      case stmt: ExpressionStatement =>
+        stmt.expression match {
+          case Some(ident: IntegerLiteral) =>
+            assert(ident.value == 420)
+            assert(ident.tokenLiteral == "420")
+          case _ => fail("Statement expression should be IntegerLiteral")
         }
 
       case _ => fail("Statement is not an expression statement")

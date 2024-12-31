@@ -2,7 +2,7 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
-import parser.ast.expressions.{ExpressionOrdering, Identifier}
+import parser.ast.expressions.{ExpressionOrdering, Identifier, IntegerLiteral}
 import parser.ast.statements.{
   ExpressionStatement,
   LetStatement,
@@ -18,8 +18,15 @@ object ParserFns {
     Map(
       TokenType.IDENT -> ((c: Token, optionP: Option[Token]) =>
         Identifier(c, c.literal)
+      ),
+      TokenType.INT -> ((c: Token, optionP: Option[Token]) =>
+        IntegerLiteral(
+          c,
+          c.literal.toInt
+        )
       )
     )
+
 }
 
 case class Parser(lexer: Lexer) {
