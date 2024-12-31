@@ -1,13 +1,13 @@
 package parser.ast.expressions
 
-import parser.ast.Expression
+import parser.ast.{Expression, Statement}
 import token.Token
 
 case class ExpressionStatement(
     token: Token,
     expression: Option[Expression]
-) extends Expression {
-  override def expressionNode(): Unit = {}
+) extends Statement {
+  override def statementNode(): Unit = {}
 
   override def tokenLiteral: String = token.literal
 

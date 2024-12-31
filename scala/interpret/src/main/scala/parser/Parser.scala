@@ -2,14 +2,15 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
-import parser.ast.expressions.Identifier
+import parser.ast.expressions.{ExpressionStatement, Identifier}
 import parser.ast.statements.{LetStatement, ReturnStatement}
 import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 
 import scala.annotation.tailrec
 
-case class Parser(lexer: Lexer) {
+case class Parser(lexer: Lexer) extends ExpressionsParser {
+
   lazy val tokenIterator: Iterator[Seq[Option[Token]]] =
     lexer.getTokens.sliding(2).withPadding(None)
   def getTokenPointers: (Option[Token], Option[Token]) =
@@ -106,6 +107,14 @@ case class Parser(lexer: Lexer) {
     }
   }
 
+  def parseExpressionStatement(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[ExpressionStatement], Seq[ParserError]) = {
+    (None, Seq.empty[ParserError])
+
+  }
+
   def parseStatement: (Option[Statement], Seq[ParserError]) = {
     val (currentToken: Option[Token], peakToken: Option[Token]) =
       getTokenPointers
@@ -116,7 +125,7 @@ case class Parser(lexer: Lexer) {
         c.tokenType match {
           case TokenType.LET    => parseLetStatement(c, optionP)
           case TokenType.RETURN => parseReturnStatement(c, optionP)
-          case _                => (None, Seq.empty[ParserError])
+          case _                => parseExpressionStatement(c, optionP)
         }
       case (None, None) => (None, Seq.empty[ParserError])
     }
