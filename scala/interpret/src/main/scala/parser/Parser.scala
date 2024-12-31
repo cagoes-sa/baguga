@@ -47,6 +47,7 @@ case class Parser(lexer: Lexer) {
                 override def tokenLiteral: String = ""
 
                 override def expressionNode(): Unit = {}
+                override def string = ""
               }
             )
           ),
