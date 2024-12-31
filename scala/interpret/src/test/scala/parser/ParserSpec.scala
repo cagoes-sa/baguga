@@ -3,7 +3,8 @@ package parser
 import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
-import parser.ast.expressions.{ExpressionStatement, Identifier}
+import parser.ast.expressions.Identifier
+import parser.ast.statements.ExpressionStatement
 import parser.ast.{Program, Statement}
 import token.Token
 import token.TokenType._

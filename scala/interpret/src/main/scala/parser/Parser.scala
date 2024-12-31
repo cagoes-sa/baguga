@@ -2,8 +2,8 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
-import parser.ast.expressions.{ExpressionStatement, Identifier}
-import parser.ast.statements.{LetStatement, ReturnStatement}
+import parser.ast.expressions.Identifier
+import parser.ast.statements.{ExpressionStatement, LetStatement, ReturnStatement}
 import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 

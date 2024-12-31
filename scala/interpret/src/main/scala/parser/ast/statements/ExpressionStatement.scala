@@ -1,4 +1,4 @@
-package parser.ast.expressions
+package parser.ast.statements
 
 import parser.ast.{Expression, Statement}
 import token.Token
