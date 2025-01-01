@@ -2,7 +2,13 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
-import parser.ast.expressions.{ExpressionOrdering, Identifier, IntegerLiteral}
+import parser.ast.expressions.ExpressionOrdering.Prefix
+import parser.ast.expressions.{
+  ExpressionOrdering,
+  Identifier,
+  IntegerLiteral,
+  PrefixExpression
+}
 import parser.ast.statements.{
   ExpressionStatement,
   LetStatement,
@@ -11,15 +17,18 @@ import parser.ast.statements.{
 import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 
+import scala.+:
 import scala.annotation.tailrec
 
 object ParserFns {
   type ParseFn =
     (Token, Option[Token]) => (Option[Expression], Seq[ParserError])
-  def prefixParseFns: Map[TokenType, ParseFn] =
+  def prefixParseFns(p: Parser): Map[TokenType, ParseFn] =
     Map(
       TokenType.IDENT -> parseIdentifierExpression,
-      TokenType.INT -> parseIntegerLiteralExpression
+      TokenType.INT -> parseIntegerLiteralExpression,
+      TokenType.BANG -> parsePrefixExpression(p),
+      TokenType.MINUS -> parsePrefixExpression(p)
     )
 
   def parseIdentifierExpression(
@@ -41,6 +50,29 @@ object ParserFns {
     }
   }
 
+  def parsePrefixExpression(p: Parser)(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+
+    val (optionC, nextOptionP) = p.getTokenPointers
+    optionC match {
+      case Some(token) =>
+        p.parseExpression(ExpressionOrdering.Prefix, token, nextOptionP) match {
+          case (Some(expression), errors) =>
+            (Some(PrefixExpression(c, c.literal, expression)), errors)
+          case (None, errors: Seq[ParserError]) =>
+            (
+              None,
+              errors :+ ParserError(
+                s"Prefix operator for token $c had the following expression failed"
+              )
+            )
+        }
+    }
+
+  }
+
 }
 
 case class Parser(lexer: Lexer) {
@@ -49,8 +81,9 @@ case class Parser(lexer: Lexer) {
     lexer.getTokens.sliding(2).withPadding(None)
   def getTokenPointers: (Option[Token], Option[Token]) =
     tokenIterator.nextOption() match {
-      case Some(Seq(current, peak)) => (current, peak)
-      case None                     => (None, None)
+      case Some(Seq(current, peak)) =>
+        (current, peak)
+      case None => (None, None)
     }
 
   // Temporary function while no evaluation exists
@@ -146,7 +179,7 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
-    ParserFns.prefixParseFns.get(c.tokenType) match {
+    ParserFns.prefixParseFns(this).get(c.tokenType) match {
       case Some(fn) => fn(c, optionP)
       case None =>
         (
@@ -170,6 +203,8 @@ case class Parser(lexer: Lexer) {
         optionP match {
           case Some(token) if token.tokenType == TokenType.SEMICOLON =>
             getTokenPointers
+            (Some(ExpressionStatement(c, Some(expression))), errors)
+          case Some(token) if expression.isInstanceOf[PrefixExpression] =>
             (Some(ExpressionStatement(c, Some(expression))), errors)
           case None => (None, errors)
         }

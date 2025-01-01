@@ -126,14 +126,18 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       case (input: String, operator: String, value: BigInt) => {
         val l = Lexer(input).next
         val p = Parser(l)
+        println(l.getTokens.toSeq)
         val (program, errors) = p.parseProgram
         program.statements should have length 1
-        program.statements.head shouldBe a[ExpressionStatement]
-        val stmt = program.statements.head.asInstanceOf[ExpressionStatement]
-        stmt.expression shouldBe a[PrefixExpression]
-        val expression = stmt.expression.asInstanceOf[PrefixExpression]
-        expression.operator shouldEqual operator
-        testIntegerLiteral(expression.right, value)
+        program.statements.head match {
+          case es: ExpressionStatement if es.expression.nonEmpty =>
+            es.expression.get shouldBe a[PrefixExpression]
+            val expression = es.expression.get.asInstanceOf[PrefixExpression]
+            expression.operator shouldEqual operator
+            testIntegerLiteral(expression.right.string + ";", value)
+
+          case _ => fail("Statement is not a prefix expression")
+        }
 
       }
     }
