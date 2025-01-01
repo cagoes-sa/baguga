@@ -14,18 +14,32 @@ import token.{Token, TokenType}
 import scala.annotation.tailrec
 
 object ParserFns {
-  def prefixParseFns: Map[TokenType, (Token, Option[Token]) => Expression] =
+  type ParseFn =
+    (Token, Option[Token]) => (Option[Expression], Seq[ParserError])
+  def prefixParseFns: Map[TokenType, ParseFn] =
     Map(
-      TokenType.IDENT -> ((c: Token, optionP: Option[Token]) =>
-        Identifier(c, c.literal)
-      ),
-      TokenType.INT -> ((c: Token, optionP: Option[Token]) =>
-        IntegerLiteral(
-          c,
-          c.literal.toInt
-        )
-      )
+      TokenType.IDENT -> parseIdentifierExpression,
+      TokenType.INT -> parseIntegerLiteralExpression
     )
+
+  def parseIdentifierExpression(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+    (Some(Identifier(c, c.literal)), Seq.empty[ParserError])
+  }
+
+  def parseIntegerLiteralExpression(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+    c.literal.toIntOption match {
+      case Some(integer) =>
+        (Some(IntegerLiteral(c, integer)), Seq.empty[ParserError])
+      case None =>
+        (None, Seq(ParserError(s"Token $c cannot be parsed into integer")))
+    }
+  }
 
 }
 
@@ -129,11 +143,20 @@ case class Parser(lexer: Lexer) {
 
   def parseExpression(
       precedence: ExpressionOrdering,
-      c: Token
-  ): Option[Expression] = {
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
     ParserFns.prefixParseFns.get(c.tokenType) match {
-      case Some(fn) => Some(fn(c, None))
-      case None     => None
+      case Some(fn) => fn(c, optionP)
+      case None =>
+        (
+          None,
+          Seq(
+            ParserError(
+              s"Token type ${c.tokenType} not mapped into expression parser"
+            )
+          )
+        )
     }
 
   }
@@ -142,19 +165,16 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[ExpressionStatement], Seq[ParserError]) = {
-    val expressionStatement =
-      parseExpression(ExpressionOrdering.Lowest, c) match {
-        case Some(expression: Expression) =>
-          optionP match {
-            case Some(token) if token.tokenType == TokenType.SEMICOLON =>
-              getTokenPointers
-              Some(ExpressionStatement(c, Some(expression)))
-            case _ => None
-          }
-        case None => None
-      }
-    (expressionStatement, Seq.empty[ParserError])
-
+    parseExpression(ExpressionOrdering.Lowest, c, optionP) match {
+      case (Some(expression: Expression), errors: Seq[ParserError]) =>
+        optionP match {
+          case Some(token) if token.tokenType == TokenType.SEMICOLON =>
+            getTokenPointers
+            (Some(ExpressionStatement(c, Some(expression))), errors)
+          case None => (None, errors)
+        }
+      case (None, errors: Seq[ParserError]) => (None, errors)
+    }
   }
 
   def parseStatement: (Option[Statement], Seq[ParserError]) = {
