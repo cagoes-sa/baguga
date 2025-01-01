@@ -123,10 +123,9 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     )
 
     prefixTests.foreach {
-      case (input: String, operator: String, value: BigInt) => {
+      case (input: String, operator: String, value: BigInt) =>
         val l = Lexer(input).next
         val p = Parser(l)
-        println(l.getTokens.toSeq)
         val (program, errors) = p.parseProgram
         program.statements should have length 1
         program.statements.head match {
@@ -138,8 +137,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
           case _ => fail("Statement is not a prefix expression")
         }
-
-      }
     }
   }
 
