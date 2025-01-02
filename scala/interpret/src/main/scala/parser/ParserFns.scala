@@ -112,15 +112,13 @@ object ParserFns {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
-    println("parseInfixExpressionCall", left, c, optionP)
+
     val precedence = getPrecedence(c)
     val (nextC, nextOptionP) = p.getTokenPointers
     (nextC, nextOptionP) match {
       case (Some(nextC), nextOptionP) =>
-        println("nextC and nextOptionP", nextC, nextOptionP)
         p.parseExpression(precedence, nextC, nextOptionP) match {
           case (Some(right), errors) =>
-            println("Expression succeeded!", right)
             optionP match {
               case Some(operatorToken) =>
                 val infixExp =
@@ -130,7 +128,7 @@ object ParserFns {
                     left,
                     right
                   )
-                println("InfixExpression", infixExp)
+
                 (
                   Some(
                     infixExp
@@ -146,7 +144,6 @@ object ParserFns {
                 )
             }
           case (None, errors) =>
-            println("Failed Expression succeeded!")
             (
               None,
               errors :+ ParserError(
