@@ -3,9 +3,15 @@ package parser
 import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.must.Matchers.have
 import org.scalatest.matchers.should.Matchers.{a, convertToAnyShouldWrapper}
-import parser.ast.expressions.{Identifier, IntegerLiteral, PrefixExpression}
+import parser.ast.expressions.{
+  Identifier,
+  InfixExpression,
+  IntegerLiteral,
+  PrefixExpression
+}
 import parser.ast.statements.ExpressionStatement
 import parser.ast.{Program, Statement}
 import token.Token
@@ -134,6 +140,44 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
             val expression = es.expression.get.asInstanceOf[PrefixExpression]
             expression.operator shouldEqual operator
             testIntegerLiteral(expression.right.string + ";", value)
+
+          case _ => fail("Statement is not a prefix expression")
+        }
+    }
+  }
+
+  "ExpressionParser - Infix Operators" should "Be correctly parsed" in {
+
+    val prefixTests: Seq[(String, BigInt, String, BigInt)] = Seq(
+      ("5 + 5;", 5, "+", 5),
+      ("5 - 5;", 5, "-", 5),
+      ("5 * 5;", 5, "*", 5),
+      ("5 / 5;", 5, "/", 5),
+      ("5 > 5;", 5, ">", 5),
+      ("5 < 5;", 5, "<", 5),
+      ("5 == 5;", 5, "==", 5),
+      ("5 != 5;", 5, "!=", 5)
+    )
+
+    prefixTests.foreach {
+      case (
+            input: String,
+            leftValue: BigInt,
+            operator: String,
+            rightValue: BigInt
+          ) =>
+        val l = Lexer(input).next
+        val p = Parser(l)
+        val (program, errors) = p.parseProgram
+        errors shouldBe Matchers.empty
+        program.statements should have length 1
+        program.statements.head match {
+          case es: ExpressionStatement if es.expression.nonEmpty =>
+            es.expression.get shouldBe a[InfixExpression]
+            val expression = es.expression.get.asInstanceOf[InfixExpression]
+            expression.operator shouldEqual operator
+            testIntegerLiteral(expression.right.string + ";", rightValue)
+            testIntegerLiteral(expression.left.string + ";", leftValue)
 
           case _ => fail("Statement is not a prefix expression")
         }
