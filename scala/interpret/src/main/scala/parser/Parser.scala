@@ -17,12 +17,13 @@ import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
 
 import scala.annotation.tailrec
+import scala.collection.BufferedIterator
 
 case class Parser(lexer: Lexer) {
 
-  lazy val tokenIterator: Iterator[Seq[Option[Token]]] =
-    lexer.getTokens.sliding(2)
-  def getTokenPointers: (Option[Token], Option[Token]) =
+  lazy val tokenIterator: BufferedIterator[Seq[Option[Token]]] =
+    lexer.getTokens.sliding(2).buffered
+  def nextTokenPointers: (Option[Token], Option[Token]) =
     tokenIterator.nextOption() match {
       case Some(Seq(current, peak)) =>
         (current, peak)
@@ -31,11 +32,11 @@ case class Parser(lexer: Lexer) {
 
   // Temporary function while no evaluation exists
   private def waitUntil(t: TokenType): Option[(Token, Token)] =
-    getTokenPointers match {
+    nextTokenPointers match {
       case (None, None) =>
         None
       case (Some(currentToken), Some(peakToken)) if peakToken.tokenType == t =>
-        getTokenPointers
+        nextTokenPointers
         Some((currentToken, peakToken))
       case _ => waitUntil(t)
 
@@ -96,7 +97,7 @@ case class Parser(lexer: Lexer) {
         )
     }
 
-    getTokenPointers match {
+    nextTokenPointers match {
       case (_, Some(assignToken))
           if assignToken.tokenType == TokenType.ASSIGN =>
         waitUntil(TokenType.SEMICOLON) match {
@@ -136,16 +137,30 @@ case class Parser(lexer: Lexer) {
           )
       }
 
-    @tailrec def recursiveInfixValuation(
+    def recursiveInfixValuation(
         tokens: (Option[Token], Option[Token]),
         expressionIteration: (Option[Expression], Seq[ParserError])
     ): (Option[Expression], Seq[ParserError]) = {
-      val (optionC, nextOptionP) = tokens
+      println("RecursiveInfixValuation Call")
+      val (Some(c), nextOptionP) = tokens
       val (leftExp, leftExpErrors) = expressionIteration
+      leftExp match {
+        case Some(leftExp) =>
+          println(s"Expression Iteration: ${leftExp.string}")
+          println(s"\tprecedence: $precedence")
+          println(
+            s"\t\tc: ${c.tokenType} - ${ParserFns.getPrecedence(c)} - ${c.literal}"
+          )
+          println(
+            s"\t\tp: ${nextOptionP.get.tokenType} - ${ParserFns
+              .getPrecedence(nextOptionP.get)} - ${nextOptionP.get.literal}"
+          )
+        case _ =>
+      }
       nextOptionP match {
         case Some(peekToken)
-            if peekToken.tokenType == TokenType.SEMICOLON && precedence < ParserFns
-              .getPrecedence(peekToken) =>
+            if ParserFns
+              .getPrecedence(c) < precedence =>
           (leftExp, leftExpErrors)
         case Some(peekToken) =>
           ParserFns.infixParseFns(this).get(peekToken.tokenType) match {
@@ -154,8 +169,9 @@ case class Parser(lexer: Lexer) {
             case Some(fn) =>
               leftExp match {
                 case Some(leftExp) =>
+                  println("\tRecursive Call")
                   recursiveInfixValuation(
-                    getTokenPointers,
+                    nextTokenPointers,
                     fn(leftExp, c, optionP)
                   )
                 case None =>
@@ -181,12 +197,13 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[ExpressionStatement], Seq[ParserError]) = {
+    println("-- Expression Statement --")
 
     parseExpression(ExpressionOrdering.Lowest, c, optionP) match {
       case (Some(expression: Expression), errors: Seq[ParserError]) =>
         optionP match {
           case Some(token) if token.tokenType == TokenType.SEMICOLON =>
-            getTokenPointers
+            nextTokenPointers
             (Some(ExpressionStatement(c, Some(expression))), errors)
           case Some(token) if expression.isInstanceOf[InfixExpression] =>
             (Some(ExpressionStatement(c, Some(expression))), errors)
@@ -200,7 +217,7 @@ case class Parser(lexer: Lexer) {
 
   def parseStatement: (Option[Statement], Seq[ParserError]) = {
     val (currentToken: Option[Token], peakToken: Option[Token]) =
-      getTokenPointers
+      nextTokenPointers
     (currentToken, peakToken) match {
       case (Some(c), _) if c.tokenType == TokenType.EOF =>
         (None, Seq.empty[ParserError])
@@ -220,6 +237,7 @@ case class Parser(lexer: Lexer) {
         program: Program = Program(Seq.empty[Statement]),
         errors: Seq[ParserError] = Seq.empty[ParserError]
     ): (Program, Seq[ParserError]) = {
+      println("Program Iteration", program.string)
       if (tokenIterator.hasNext) {
         parseStatement match {
           case (None, statementErrors) =>

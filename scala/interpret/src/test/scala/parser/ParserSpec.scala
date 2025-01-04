@@ -31,7 +31,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     )
 
     expectedIterations.map { expected =>
-      parser.getTokenPointers match {
+      parser.nextTokenPointers match {
         case (current, peak) =>
           assert(expected._1 == current && expected._2 == peak)
       }
@@ -143,6 +143,27 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
           case _ => fail("Statement is not a prefix expression")
         }
+    }
+  }
+
+  "ExpressionParser - Infix Operators - complex operators" should "Be correctly parsed" in {
+
+    val prefixTests: Seq[(String, String)] = Seq(
+      ("1 + 2 + 3;", "")
+    )
+
+    prefixTests.foreach {
+      case (
+            input: String,
+            _: String
+          ) =>
+        val l = Lexer(input).next
+        val p = Parser(l)
+        val (program, errors) = p.parseProgram
+        errors shouldBe Matchers.empty
+        println(program.string)
+
+      case _ => fail("Statement is not a prefix expression")
     }
   }
 

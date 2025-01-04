@@ -63,7 +63,7 @@ object ParserFns {
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
     optionP match {
-      case Some(token) if token.tokenType == SEMICOLON => p.getTokenPointers
+      case Some(token) if token.tokenType == SEMICOLON => p.nextTokenPointers
       case _                                           =>
     }
     (Some(Identifier(c, c.literal)), Seq.empty[ParserError])
@@ -74,7 +74,7 @@ object ParserFns {
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
     optionP match {
-      case Some(token) if token.tokenType == SEMICOLON => p.getTokenPointers
+      case Some(token) if token.tokenType == SEMICOLON => p.nextTokenPointers
       case _                                           =>
     }
     c.literal.toIntOption match {
@@ -90,7 +90,7 @@ object ParserFns {
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
 
-    val (optionC, nextOptionP) = p.getTokenPointers
+    val (optionC, nextOptionP) = p.nextTokenPointers
     optionC match {
       case Some(token) =>
         p.parseExpression(ExpressionOrdering.Prefix, token, nextOptionP) match {
@@ -112,12 +112,20 @@ object ParserFns {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
+    println(s"\t\t\t Parsing Infix Expression: ${left.string} ")
+    println(s"\t\t\t currentToken: ${c.tokenType} - ${c.literal}")
+    println(
+      s"\t\t\t peakToken: ${optionP.get.tokenType} - ${optionP.get.literal}"
+    )
 
-    val precedence = getPrecedence(c)
-    val (nextC, nextOptionP) = p.getTokenPointers
+    val (nextC, nextOptionP) = p.nextTokenPointers
     (nextC, nextOptionP) match {
       case (Some(nextC), nextOptionP) =>
-        p.parseExpression(precedence, nextC, nextOptionP) match {
+        p.parseExpression(
+          getPrecedence(optionP.get),
+          nextC,
+          nextOptionP
+        ) match {
           case (Some(right), errors) =>
             optionP match {
               case Some(operatorToken) =>
