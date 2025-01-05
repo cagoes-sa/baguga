@@ -191,7 +191,15 @@ case class Parser(lexer: Lexer) {
     ): (Option[Expression], Seq[ParserError]) = {
       peekTokenPointer match {
         case Some(peek) =>
-          if (getPrecedence(peek) > precedence) {
+          if (
+            getPrecedence(peek) > precedence && !Seq(
+              TokenType.SEMICOLON,
+              TokenType.EOF
+            ).contains(peek.tokenType) && !Seq(
+              TokenType.SEMICOLON,
+              TokenType.EOF
+            ).contains(currentTokenPointer.get.tokenType)
+          ) {
             val (busExpression, busErrors) = {
               infixParseFns(this).get(peek.tokenType) match {
                 case Some(function) =>

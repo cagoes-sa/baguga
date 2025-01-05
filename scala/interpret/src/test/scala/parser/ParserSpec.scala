@@ -146,6 +146,80 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         }
     }
   }
+  "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
+    val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
+    val l = Lexer(input).next
+    val p = Parser(l)
+    val (expression, errors) = p.parseProgram
+    println(s"Expression output: ${expression.string}")
+    expression.string shouldEqual expected
+    errors shouldBe Matchers.empty
+  }
+
+  "ExpressionParser - Infix Operators - testing really complex operators" should "Be correctly parsed" in {
+
+    val prefixTests: Seq[(String, String)] = Seq(
+      (
+        "-a * b",
+        "((-a) * b)"
+      ),
+      (
+        "!-a",
+        "(!(-a))"
+      ),
+      (
+        "a + b + c",
+        "((a + b) + c)"
+      ),
+      (
+        "a + b - c",
+        "((a + b) - c)"
+      ),
+      (
+        "a * b * c",
+        "((a * b) * c)"
+      ),
+      (
+        "a * b / c",
+        "((a * b) / c)"
+      ),
+      (
+        "a + b / c",
+        "(a + (b / c))"
+      ),
+      (
+        "a + b * c + d / e - f",
+        "(((a + (b * c)) + (d / e)) - f)"
+      ),
+      (
+        "5 > 4 == 3 < 4",
+        "((5 > 4) == (3 < 4))"
+      ),
+      (
+        "5 < 4 != 3 > 4",
+        "((5 < 4) != (3 > 4))"
+      ),
+      (
+        "3 + 4 * 5 == 3 * 1 + 4 * 5",
+        "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+      )
+    )
+
+    prefixTests.foreach {
+      case (
+            input: String,
+            expected: String
+          ) =>
+        val l = Lexer(input).next
+        val p = Parser(l)
+        val (expression, errors) = p.parseProgram
+        println(s"Expression output: ${expression.string}")
+        expression.string shouldEqual expected
+        errors shouldBe Matchers.empty
+
+      case _ => fail("Statement is not a prefix expression")
+    }
+  }
 
   "ExpressionParser - Infix Operators - complex operators" should "Be correctly parsed" in {
 
@@ -153,6 +227,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       ("1 + 2 + 3;", ""),
       ("1 + 2;", ""),
       ("1 + 2 * 3;", ""),
+      ("-!a", ""),
       ("-!a+b", "")
     )
 
