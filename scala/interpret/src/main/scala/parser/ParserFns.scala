@@ -118,57 +118,36 @@ object ParserFns {
       s"\t\t\t peakToken: ${optionP.get.tokenType} - ${optionP.get.literal}"
     )
 
-    p.nextTokenPointers
-    val (nextC, nextOptionP) = p.getTokenPointers
-    (nextC, nextOptionP) match {
-      case (Some(nextC), nextOptionP) =>
-        p.parseExpression(
-          getPrecedence(optionP.get),
-          nextC,
-          nextOptionP
-        ) match {
-          case (Some(right), errors) =>
-            optionP match {
-              case Some(operatorToken) =>
-                val infixExp =
-                  InfixExpression(
-                    operatorToken,
-                    operatorToken.literal,
-                    left,
-                    right
-                  )
+    optionP match {
+      case Some(peek) =>
+        p.nextTokenPointers
+        p.nextTokenPointers match {
+          case (Some(rightExpressionToken), rightExpressionPeekToken) =>
+            println(s"\t\t\t\trightExpressionToken $rightExpressionToken")
+            println(
+              s"\t\t\t\trightExpressionPeekToken $rightExpressionPeekToken"
+            )
+            val precedence =
+              getPrecedence(peek)
 
+            p.parseExpression(
+              precedence,
+              rightExpressionToken,
+              rightExpressionPeekToken
+            ) match {
+              case (Some(rightExpression), errors) =>
                 (
                   Some(
-                    infixExp
+                    InfixExpression(peek, peek.literal, left, rightExpression)
                   ),
-                  Seq.empty[ParserError]
+                  errors
                 )
-              case None =>
-                (
-                  None,
-                  errors :+ ParserError(
-                    s"Operator token was null on expression with inputs $c, $optionP"
-                  )
-                )
+              case (None, errors) => (None, errors)
             }
-          case (None, errors) =>
-            (
-              None,
-              errors :+ ParserError(
-                s"Right expression of (${left.string}${c.literal}...) failed"
-              )
-            )
         }
-      case (None, _) =>
-        (
-          None,
-          Seq(
-            ParserError(
-              s"No next token for infix operation (${left.string}${c.literal}...)"
-            )
-          )
-        )
+      case None =>
+        (None, Seq.empty[ParserError])
+
     }
 
   }

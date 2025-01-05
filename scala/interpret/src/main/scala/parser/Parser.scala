@@ -2,6 +2,7 @@ package parser
 
 import errors.ParserError
 import lexer.Lexer
+import parser.ParserFns.{getPrecedence, infixParseFns}
 import parser.ast.expressions.{
   ExpressionOrdering,
   Identifier,
@@ -125,91 +126,6 @@ case class Parser(lexer: Lexer) {
     }
   }
 
-  def parseExpression(
-      precedence: ExpressionOrdering,
-      c: Token,
-      optionP: Option[Token]
-  ): (Option[Expression], Seq[ParserError]) = {
-    println(s"Parse Expression Call - \n\tprecedence ${precedence}")
-    println(s"\ttokens ${c} and $optionP")
-    val (leftExp, leftExpErrors) =
-      ParserFns.prefixParseFns(this).get(c.tokenType) match {
-        case Some(fn) => fn(c, optionP)
-        case None =>
-          (
-            None,
-            Seq(
-              ParserError(
-                s"Token type ${c.tokenType} not mapped into expression parser"
-              )
-            )
-          )
-      }
-
-    def recursiveInfixValuation(
-        tokens: (Token, Token),
-        expressionIteration: (Option[Expression], Seq[ParserError])
-    ): (Option[Expression], Seq[ParserError]) = {
-      println("RecursiveInfixValuation Call")
-      val (leftExp, leftExpErrors) = expressionIteration
-      val (cur, peek) = tokens
-      leftExp match {
-        case Some(leftExp) =>
-          println(s"\tRecursiveInfix Valuation Iteration: ${leftExp.string}")
-          println(s"\tprecedence: $precedence")
-          println(
-            s"\t\tc: ${cur.tokenType} - ${ParserFns.getPrecedence(cur)} - ${cur.literal}"
-          )
-          println(
-            s"\t\tp: ${peek.tokenType} - ${ParserFns
-              .getPrecedence(peek)} - ${peek.literal}"
-          )
-        case _ =>
-      }
-      ParserFns.infixParseFns(this).get(peek.tokenType) match {
-        case None =>
-          (leftExp, leftExpErrors)
-        case Some(fn) =>
-          leftExp match {
-            case Some(leftExp) =>
-              fn(leftExp, c, optionP) match {
-                case output =>
-                  recursiveInfixValuation(
-                    nextTokenPointers match {
-                      case (Some(a), Some(b)) =>
-                        println(s"These are the next tokens: $a $b")
-                        (a, b)
-                    },
-                    output
-                  )
-              }
-            case None =>
-              (leftExp, leftExpErrors)
-          }
-      }
-    }
-    optionP match {
-      case Some(peekToken)
-          if !(ParserFns
-            .getPrecedence(peekToken) > precedence) =>
-        println("\tPrecedence is not bigger, will just go to next tokens ")
-        (leftExp, leftExpErrors)
-      case _ =>
-        println("Am I going to another place?")
-        leftExp match {
-          case Some(leftExp) =>
-            recursiveInfixValuation(
-              (c, optionP.get),
-              (Some(leftExp), leftExpErrors)
-            )
-          case None =>
-            (None, leftExpErrors)
-        }
-
-    }
-
-  }
-
   def parseExpressionStatement(
       c: Token,
       optionP: Option[Token]
@@ -222,14 +138,57 @@ case class Parser(lexer: Lexer) {
           case Some(token) if token.tokenType == TokenType.SEMICOLON =>
             nextTokenPointers
             (Some(ExpressionStatement(c, Some(expression))), errors)
-          case Some(token) if expression.isInstanceOf[InfixExpression] =>
+          case Some(_) if expression.isInstanceOf[InfixExpression] =>
             (Some(ExpressionStatement(c, Some(expression))), errors)
-          case Some(token) if expression.isInstanceOf[PrefixExpression] =>
+          case Some(_) if expression.isInstanceOf[PrefixExpression] =>
             (Some(ExpressionStatement(c, Some(expression))), errors)
           case None => (None, errors)
+          case _ =>
+            (None, errors :+ ParserError(s"Unexpected token on $c"))
         }
       case (None, errors: Seq[ParserError]) => (None, errors)
     }
+  }
+
+  def parseExpression(
+      precedence: ExpressionOrdering,
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+    println(s"Parse Expression Call - \n\tprecedence $precedence")
+    println(s"\ttokens ${c} and $optionP")
+    val (leftExp, leftExpErrors) = {
+      ParserFns.prefixParseFns(this).get(c.tokenType) match {
+        case Some(fn) => fn(c, optionP)
+        case None =>
+          (
+            None,
+            Seq(
+              ParserError(
+                s"Token type ${c.tokenType} not mapped into expression parser"
+              )
+            )
+          )
+      }
+    }
+
+    optionP match {
+      case Some(peek) =>
+        if (getPrecedence(peek) > precedence) {
+          infixParseFns(this).get(peek.tokenType) match {
+            case Some(function) =>
+              leftExp match {
+                case Some(left) => function(left, c, optionP)
+                case None =>
+                  (None, leftExpErrors :+ ParserError("Failed left expression"))
+              }
+            case None => (leftExp, leftExpErrors)
+          }
+        } else {
+          (leftExp, leftExpErrors)
+        }
+    }
+
   }
 
   def parseStatement: (Option[Statement], Seq[ParserError]) = {

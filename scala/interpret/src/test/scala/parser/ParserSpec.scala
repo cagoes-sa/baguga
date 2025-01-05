@@ -7,6 +7,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.must.Matchers.have
 import org.scalatest.matchers.should.Matchers.{a, convertToAnyShouldWrapper}
 import parser.ast.expressions.{
+  ExpressionOrdering,
   Identifier,
   InfixExpression,
   IntegerLiteral,
@@ -161,8 +162,14 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
           ) =>
         val l = Lexer(input).next
         val p = Parser(l)
-        val (program, errors) = p.parseProgram
-        println(s"PROGRAM OUTPUT ${program.string}")
+        val (Some(c), optionP) = p.nextTokenPointers
+        val (expression, errors) =
+          p.parseExpression(ExpressionOrdering.Lowest, c, optionP)
+        expression match {
+          case Some(expression) =>
+            println(s"Expression output: ${expression.string}")
+          case None => println("Expression returned empty!")
+        }
         errors shouldBe Matchers.empty
 
       case _ => fail("Statement is not a prefix expression")
