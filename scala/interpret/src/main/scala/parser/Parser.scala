@@ -138,7 +138,6 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[ExpressionStatement], Seq[ParserError]) = {
-    println("-- Expression Statement --")
 
     parseExpression(ExpressionOrdering.Lowest, c, optionP) match {
       case (Some(expression: Expression), errors: Seq[ParserError]) =>
@@ -163,8 +162,6 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
-    println(s"Parse Expression Call - \n\tprecedence $precedence")
-    println(s"\ttokens ${c} and $optionP")
     val (leftExp, leftExpErrors) = {
       ParserFns.prefixParseFns(this).get(c.tokenType) match {
         case Some(fn) => fn(c, optionP)
@@ -180,12 +177,7 @@ case class Parser(lexer: Lexer) {
       }
     }
 
-    println(s"\tinside function tokens: ${c}, ${optionP}")
-    println(
-      s"\tinside object tokens: ${currentTokenPointer}, ${peekTokenPointer}"
-    )
-
-    def infixPartOfTheFunction(
+    @tailrec def infixPartOfTheFunction(
         currentExpression: Option[Expression],
         currentErrors: Seq[ParserError]
     ): (Option[Expression], Seq[ParserError]) = {
@@ -216,7 +208,6 @@ case class Parser(lexer: Lexer) {
                   (currentExpression, currentErrors)
               }
             }
-            println(s"On busExpression: getTokenPointers: $getTokenPointers")
             infixPartOfTheFunction(busExpression, busErrors)
           } else {
             (currentExpression, currentErrors)
@@ -250,7 +241,6 @@ case class Parser(lexer: Lexer) {
         program: Program = Program(Seq.empty[Statement]),
         errors: Seq[ParserError] = Seq.empty[ParserError]
     ): (Program, Seq[ParserError]) = {
-      println(s"Program Iteration: ${program.string}")
       if (tokenIterator.hasNext) {
         parseStatement match {
           case (None, statementErrors) =>

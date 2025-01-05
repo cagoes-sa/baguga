@@ -112,21 +112,12 @@ object ParserFns {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
-    println(s"\t\t\t Parsing Infix Expression: ${left.string} ")
-    println(s"\t\t\t currentToken: ${c.tokenType} - ${c.literal}")
-    println(
-      s"\t\t\t peakToken: ${optionP.get.tokenType} - ${optionP.get.literal}"
-    )
 
     optionP match {
       case Some(peek) =>
         p.nextTokenPointers
         p.nextTokenPointers match {
           case (Some(rightExpressionToken), rightExpressionPeekToken) =>
-            println(s"\t\t\t\trightExpressionToken $rightExpressionToken")
-            println(
-              s"\t\t\t\trightExpressionPeekToken $rightExpressionPeekToken"
-            )
             val precedence =
               getPrecedence(peek)
 

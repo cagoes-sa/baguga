@@ -10,7 +10,6 @@ import parser.ast.expressions.{
   ExpressionOrdering,
   Identifier,
   InfixExpression,
-  IntegerLiteral,
   PrefixExpression
 }
 import parser.ast.statements.ExpressionStatement
