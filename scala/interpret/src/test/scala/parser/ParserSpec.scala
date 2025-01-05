@@ -150,7 +150,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val l = Lexer(input).next
     val p = Parser(l)
     val (expression, errors) = p.parseProgram
-    println(s"Expression output: ${expression.string}")
     expression.string shouldEqual expected
     errors shouldBe Matchers.empty
   }
