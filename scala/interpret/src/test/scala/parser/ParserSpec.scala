@@ -152,7 +152,8 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val prefixTests: Seq[(String, String)] = Seq(
       ("1 + 2 + 3;", ""),
       ("1 + 2;", ""),
-      ("1 + 2 * 3;", "")
+      ("1 + 2 * 3;", ""),
+      ("-!a+b", "")
     )
 
     prefixTests.foreach {

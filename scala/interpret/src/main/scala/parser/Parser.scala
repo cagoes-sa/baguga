@@ -31,11 +31,19 @@ case class Parser(lexer: Lexer) {
       case None => (None, None)
     }
 
+  var currentTokenPointer: Option[Token] = None
+  var peekTokenPointer: Option[Token] = None
+
   def nextTokenPointers: (Option[Token], Option[Token]) =
     tokenIterator.nextOption() match {
-      case Some(Seq(current, peak)) =>
-        (current, peak)
-      case None => (None, None)
+      case Some(Seq(current, peek)) =>
+        currentTokenPointer = current
+        peekTokenPointer = peek
+        (currentTokenPointer, peekTokenPointer)
+      case None =>
+        currentTokenPointer = None
+        peekTokenPointer = None
+        (None, None)
     }
 
   // Temporary function while no evaluation exists
@@ -172,22 +180,43 @@ case class Parser(lexer: Lexer) {
       }
     }
 
-    optionP match {
-      case Some(peek) =>
-        if (getPrecedence(peek) > precedence) {
-          infixParseFns(this).get(peek.tokenType) match {
-            case Some(function) =>
-              leftExp match {
-                case Some(left) => function(left, c, optionP)
+    println(s"\tinside function tokens: ${c}, ${optionP}")
+    println(
+      s"\tinside object tokens: ${currentTokenPointer}, ${peekTokenPointer}"
+    )
+
+    def infixPartOfTheFunction(
+        currentExpression: Option[Expression],
+        currentErrors: Seq[ParserError]
+    ): (Option[Expression], Seq[ParserError]) = {
+      peekTokenPointer match {
+        case Some(peek) =>
+          if (getPrecedence(peek) > precedence) {
+            val (busExpression, busErrors) = {
+              infixParseFns(this).get(peek.tokenType) match {
+                case Some(function) =>
+                  currentExpression match {
+                    case Some(left) =>
+                      function(left, currentTokenPointer.get, peekTokenPointer)
+                    case None =>
+                      (
+                        None,
+                        currentErrors :+ ParserError("Failed left expression")
+                      )
+                  }
                 case None =>
-                  (None, leftExpErrors :+ ParserError("Failed left expression"))
+                  (currentExpression, currentErrors)
               }
-            case None => (leftExp, leftExpErrors)
+            }
+            println(s"On busExpression: getTokenPointers: $getTokenPointers")
+            infixPartOfTheFunction(busExpression, busErrors)
+          } else {
+            (currentExpression, currentErrors)
           }
-        } else {
-          (leftExp, leftExpErrors)
-        }
+      }
     }
+
+    infixPartOfTheFunction(leftExp, leftExpErrors)
 
   }
 
