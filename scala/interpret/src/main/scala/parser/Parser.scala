@@ -23,6 +23,13 @@ case class Parser(lexer: Lexer) {
 
   lazy val tokenIterator: BufferedIterator[Seq[Option[Token]]] =
     lexer.getTokens.sliding(2).buffered
+  def getTokenPointers: (Option[Token], Option[Token]) =
+    tokenIterator.headOption match {
+      case Some(Seq(current, peak)) =>
+        (current, peak)
+      case None => (None, None)
+    }
+
   def nextTokenPointers: (Option[Token], Option[Token]) =
     tokenIterator.nextOption() match {
       case Some(Seq(current, peak)) =>
@@ -123,6 +130,8 @@ case class Parser(lexer: Lexer) {
       c: Token,
       optionP: Option[Token]
   ): (Option[Expression], Seq[ParserError]) = {
+    println(s"Parse Expression Call - \n\tprecedence ${precedence}")
+    println(s"\ttokens ${c} and $optionP")
     val (leftExp, leftExpErrors) =
       ParserFns.prefixParseFns(this).get(c.tokenType) match {
         case Some(fn) => fn(c, optionP)
@@ -138,57 +147,65 @@ case class Parser(lexer: Lexer) {
       }
 
     def recursiveInfixValuation(
-        tokens: (Option[Token], Option[Token]),
+        tokens: (Token, Token),
         expressionIteration: (Option[Expression], Seq[ParserError])
     ): (Option[Expression], Seq[ParserError]) = {
       println("RecursiveInfixValuation Call")
-      val (Some(c), nextOptionP) = tokens
       val (leftExp, leftExpErrors) = expressionIteration
+      val (cur, peek) = tokens
       leftExp match {
         case Some(leftExp) =>
-          println(s"Expression Iteration: ${leftExp.string}")
+          println(s"\tRecursiveInfix Valuation Iteration: ${leftExp.string}")
           println(s"\tprecedence: $precedence")
           println(
-            s"\t\tc: ${c.tokenType} - ${ParserFns.getPrecedence(c)} - ${c.literal}"
+            s"\t\tc: ${cur.tokenType} - ${ParserFns.getPrecedence(cur)} - ${cur.literal}"
           )
           println(
-            s"\t\tp: ${nextOptionP.get.tokenType} - ${ParserFns
-              .getPrecedence(nextOptionP.get)} - ${nextOptionP.get.literal}"
+            s"\t\tp: ${peek.tokenType} - ${ParserFns
+              .getPrecedence(peek)} - ${peek.literal}"
           )
         case _ =>
       }
-      nextOptionP match {
-        case Some(peekToken)
-            if ParserFns
-              .getPrecedence(c) < precedence =>
+      ParserFns.infixParseFns(this).get(peek.tokenType) match {
+        case None =>
           (leftExp, leftExpErrors)
-        case Some(peekToken) =>
-          ParserFns.infixParseFns(this).get(peekToken.tokenType) match {
+        case Some(fn) =>
+          leftExp match {
+            case Some(leftExp) =>
+              fn(leftExp, c, optionP) match {
+                case output =>
+                  recursiveInfixValuation(
+                    nextTokenPointers match {
+                      case (Some(a), Some(b)) =>
+                        println(s"These are the next tokens: $a $b")
+                        (a, b)
+                    },
+                    output
+                  )
+              }
             case None =>
               (leftExp, leftExpErrors)
-            case Some(fn) =>
-              leftExp match {
-                case Some(leftExp) =>
-                  println("\tRecursive Call")
-                  recursiveInfixValuation(
-                    nextTokenPointers,
-                    fn(leftExp, c, optionP)
-                  )
-                case None =>
-                  (leftExp, leftExpErrors)
-              }
           }
-
       }
     }
-    leftExp match {
-      case Some(leftExp) =>
-        recursiveInfixValuation(
-          (Some(c), optionP),
-          (Some(leftExp), leftExpErrors)
-        )
-      case None =>
-        (None, leftExpErrors)
+    optionP match {
+      case Some(peekToken)
+          if !(ParserFns
+            .getPrecedence(peekToken) > precedence) =>
+        println("\tPrecedence is not bigger, will just go to next tokens ")
+        (leftExp, leftExpErrors)
+      case _ =>
+        println("Am I going to another place?")
+        leftExp match {
+          case Some(leftExp) =>
+            recursiveInfixValuation(
+              (c, optionP.get),
+              (Some(leftExp), leftExpErrors)
+            )
+          case None =>
+            (None, leftExpErrors)
+        }
+
     }
 
   }
@@ -237,7 +254,7 @@ case class Parser(lexer: Lexer) {
         program: Program = Program(Seq.empty[Statement]),
         errors: Seq[ParserError] = Seq.empty[ParserError]
     ): (Program, Seq[ParserError]) = {
-      println("Program Iteration", program.string)
+      println(s"Program Iteration: ${program.string}")
       if (tokenIterator.hasNext) {
         parseStatement match {
           case (None, statementErrors) =>

@@ -4,6 +4,11 @@ import enumeratum._
 import enumeratum.EnumEntry._
 
 sealed trait ExpressionOrdering extends EnumEntry with Uppercase {
+  def >(right: ExpressionOrdering): Boolean = {
+    ExpressionOrdering.valuesToIndex(this) > ExpressionOrdering.valuesToIndex(
+      right
+    )
+  }
   def <(right: ExpressionOrdering): Boolean = {
     ExpressionOrdering.valuesToIndex(this) < ExpressionOrdering.valuesToIndex(
       right

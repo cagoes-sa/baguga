@@ -118,7 +118,8 @@ object ParserFns {
       s"\t\t\t peakToken: ${optionP.get.tokenType} - ${optionP.get.literal}"
     )
 
-    val (nextC, nextOptionP) = p.nextTokenPointers
+    p.nextTokenPointers
+    val (nextC, nextOptionP) = p.getTokenPointers
     (nextC, nextOptionP) match {
       case (Some(nextC), nextOptionP) =>
         p.parseExpression(

@@ -149,7 +149,9 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
   "ExpressionParser - Infix Operators - complex operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String)] = Seq(
-      ("1 + 2 + 3;", "")
+      ("1 + 2 + 3;", ""),
+      ("1 + 2;", ""),
+      ("1 + 2 * 3;", "")
     )
 
     prefixTests.foreach {
@@ -160,8 +162,8 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         val l = Lexer(input).next
         val p = Parser(l)
         val (program, errors) = p.parseProgram
+        println(s"PROGRAM OUTPUT ${program.string}")
         errors shouldBe Matchers.empty
-        println(program.string)
 
       case _ => fail("Statement is not a prefix expression")
     }
