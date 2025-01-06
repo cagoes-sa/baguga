@@ -180,6 +180,7 @@ case class Parser(lexer: Lexer) {
         currentExpression: Option[Expression],
         currentErrors: Seq[ParserError]
     ): (Option[Expression], Seq[ParserError]) = {
+      println("infixPartOfTheFunction")
 
       (currentTokenPointer, peekTokenPointer) match {
         case (Some(currentToken), _)
@@ -204,7 +205,12 @@ case class Parser(lexer: Lexer) {
                   (currentExpression, currentErrors)
               }
             }
-            infixPartOfTheFunction(busExpression, busErrors)
+            if (busErrors.isEmpty) {
+              infixPartOfTheFunction(busExpression, busErrors)
+            } else {
+              (busExpression, busErrors)
+            }
+
           } else {
             (currentExpression, currentErrors)
           }
