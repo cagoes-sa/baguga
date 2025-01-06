@@ -180,7 +180,6 @@ case class Parser(lexer: Lexer) {
         currentExpression: Option[Expression],
         currentErrors: Seq[ParserError]
     ): (Option[Expression], Seq[ParserError]) = {
-      println("infixPartOfTheFunction")
 
       (currentTokenPointer, peekTokenPointer) match {
         case (Some(currentToken), _)

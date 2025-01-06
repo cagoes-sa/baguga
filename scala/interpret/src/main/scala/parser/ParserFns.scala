@@ -58,7 +58,8 @@ object ParserFns {
       TokenType.BANG -> parsePrefixExpression(p),
       TokenType.MINUS -> parsePrefixExpression(p),
       TokenType.FALSE -> parseBooleanExpression(p),
-      TokenType.TRUE -> parseBooleanExpression(p)
+      TokenType.TRUE -> parseBooleanExpression(p),
+      TokenType.LPAREN -> parseGroupedExpression(p)
     )
 
   private def parseIdentifierExpression(p: Parser)(
@@ -70,6 +71,28 @@ object ParserFns {
       case _                                           =>
     }
     (Some(Identifier(c, c.literal)), Seq.empty[ParserError])
+  }
+
+  private def parseGroupedExpression(p: Parser)(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+    p.nextTokenPointers
+    val parseExpressionOutput = p.currentTokenPointer match {
+      case Some(currentToken) =>
+        p.parseExpression(Lowest, currentToken, p.peekTokenPointer)
+      case None =>
+        (None, Seq(ParserError("No tokens found after parenthesis")))
+    }
+    parseExpressionOutput match {
+      case (Some(expression), errors) =>
+        p.peekTokenPointer match {
+          case Some(token) if token.tokenType == TokenType.RPAREN =>
+            (Some(expression), errors)
+          case _ => (None, errors :+ ParserError("Right parenthesis not found"))
+        }
+      case (None, errors) => (None, errors)
+    }
   }
 
   private def parseBooleanExpression(p: Parser)(
