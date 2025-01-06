@@ -145,9 +145,7 @@ case class Parser(lexer: Lexer) {
           case Some(token) if token.tokenType == TokenType.SEMICOLON =>
             nextTokenPointers
             (Some(ExpressionStatement(c, Some(expression))), errors)
-          case Some(_) if expression.isInstanceOf[InfixExpression] =>
-            (Some(ExpressionStatement(c, Some(expression))), errors)
-          case Some(_) if expression.isInstanceOf[PrefixExpression] =>
+          case Some(_) =>
             (Some(ExpressionStatement(c, Some(expression))), errors)
           case None => (None, errors)
           case _ =>
@@ -164,7 +162,8 @@ case class Parser(lexer: Lexer) {
   ): (Option[Expression], Seq[ParserError]) = {
     val (leftExp, leftExpErrors) = {
       ParserFns.prefixParseFns(this).get(c.tokenType) match {
-        case Some(fn) => fn(c, optionP)
+        case Some(fn) =>
+          fn(c, optionP)
         case None =>
           (
             None,

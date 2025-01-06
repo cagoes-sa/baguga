@@ -116,7 +116,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
   }
 
   "ExpressionParser - boolean literals" should "Be correctly parsed" in {
-    val inputTrue = "true;"
+    val inputTrue = "true"
     testBooleanLiteral(inputTrue, expectedValue = true)
     val inputFalse = "false;"
     testBooleanLiteral(inputFalse, expectedValue = false)
@@ -207,7 +207,22 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       (
         "3 + 4 * 5 == 3 * 1 + 4 * 5",
         "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
-      )
+      ),
+      (
+        "3 > 5 == false",
+        "((3 > 5) == false)"
+      ),
+      (
+        "3 < 5 == true",
+        "((3 < 5) == true)"
+      ),
+      (
+        "3 < 5 == true;",
+        "((3 < 5) == true)"
+      ),
+      ("true", "true"),
+      ("false", "false"),
+      ("foobar", "foobar")
     )
 
     prefixTests.foreach {
