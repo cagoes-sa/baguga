@@ -10,6 +10,7 @@ import parser.ast.expressions.ExpressionOrdering.{
   Sum
 }
 import parser.ast.expressions.{
+  BooleanLiteral,
   ExpressionOrdering,
   Identifier,
   InfixExpression,
@@ -55,7 +56,9 @@ object ParserFns {
       TokenType.IDENT -> parseIdentifierExpression(p),
       TokenType.INT -> parseIntegerLiteralExpression(p),
       TokenType.BANG -> parsePrefixExpression(p),
-      TokenType.MINUS -> parsePrefixExpression(p)
+      TokenType.MINUS -> parsePrefixExpression(p),
+      TokenType.FALSE -> parseBooleanExpression(p),
+      TokenType.TRUE -> parseBooleanExpression(p)
     )
 
   private def parseIdentifierExpression(p: Parser)(
@@ -67,6 +70,22 @@ object ParserFns {
       case _                                           =>
     }
     (Some(Identifier(c, c.literal)), Seq.empty[ParserError])
+  }
+
+  private def parseBooleanExpression(p: Parser)(
+      c: Token,
+      optionP: Option[Token]
+  ): (Option[Expression], Seq[ParserError]) = {
+    optionP match {
+      case Some(token) if token.tokenType == SEMICOLON => p.nextTokenPointers
+      case _                                           =>
+    }
+    c.literal.toBooleanOption match {
+      case Some(boolean) =>
+        (Some(BooleanLiteral(c, boolean)), Seq.empty[ParserError])
+      case None =>
+        (None, Seq(ParserError(s"Token $c cannot be parsed into boolean")))
+    }
   }
 
   private def parseIntegerLiteralExpression(p: Parser)(

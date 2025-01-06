@@ -115,10 +115,16 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
+  "ExpressionParser - boolean literals" should "Be correctly parsed" in {
+    val inputTrue = "true;"
+    testBooleanLiteral(inputTrue, expectedValue = true)
+    val inputFalse = "false;"
+    testBooleanLiteral(inputFalse, expectedValue = false)
+  }
+
   "ExpressionParser - integer literals" should "Be correctly parsed" in {
     val input = "420;"
     testIntegerLiteral(input, 420)
-
   }
 
   "ExpressionParser - Prefix Operators" should "Be correctly parsed" in {
@@ -145,6 +151,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         }
     }
   }
+
   "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
     val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
     val l = Lexer(input).next
