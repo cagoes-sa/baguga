@@ -102,13 +102,13 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val inputFalse = "false;"
     testBooleanLiteral(inputFalse, expectedValue = false)
   }
-  /*
 
   "ExpressionParser - integer literals" should "Be correctly parsed" in {
     val input = "420;"
     testIntegerLiteral(input, 420)
   }
 
+  /*
   "ExpressionParser - Prefix Operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String, BigInt)] = Seq(
