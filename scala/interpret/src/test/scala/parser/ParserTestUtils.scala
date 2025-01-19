@@ -30,6 +30,7 @@ trait ParserTestUtils {
     }
   }
 
+    /*
   def testBooleanLiteral(input: String, expectedValue: Boolean): Unit = {
     val l = Lexer(input).next
     val p = Parser(l)
@@ -88,5 +89,5 @@ trait ParserTestUtils {
       case _ => fail("Statement is not an expression statement")
     }
   }
-
+*/
 }
