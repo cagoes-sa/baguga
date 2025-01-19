@@ -4,14 +4,9 @@ import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.must.Matchers.have
+import org.scalatest.matchers.must.Matchers.{defined, have}
 import org.scalatest.matchers.should.Matchers.{a, convertToAnyShouldWrapper}
-import parser.ast.expressions.{
-  ExpressionOrdering,
-  Identifier,
-  InfixExpression,
-  PrefixExpression
-}
+import parser.ast.expressions.{ExpressionOrdering, Identifier, InfixExpression, PrefixExpression}
 import parser.ast.statements.ExpressionStatement
 import parser.ast.{Program, Statement}
 import token.Token
@@ -29,12 +24,12 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       (Token(INT, "5"), Token(SEMICOLON, ";")),
       (Token(SEMICOLON, ";"), Token(EOF, ""))
     )
-    while(parser.pToken.isDefined) {
-      parser.debugTokens()
-      parser.nextTokens()
+    expectedIterations.map {
+      case (cExpected: Token, pExpected: Token) =>
+        parser.cToken shouldEqual Some(cExpected)
+        parser.pToken shouldEqual Some(pExpected)
+        parser.nextTokens()
     }
-
-
   }
   /*
 
