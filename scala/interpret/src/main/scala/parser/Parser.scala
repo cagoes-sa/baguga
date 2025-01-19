@@ -2,20 +2,24 @@ package parser
 
 import com.typesafe.scalalogging.Logger
 import lexer.Lexer
-import parser.ast.expressions.Identifier
-import parser.ast.statements.{LetStatement, ReturnStatement}
-import parser.ast.{Expression, Program, Statement}
+import parser.Parser.EOFToken
+import parser.ast.expressions.ExpressionOrdering.Lowest
+import parser.ast.statements.{ExpressionStatement, LetStatement, ReturnStatement}
+import parser.ast.{Program, Statement}
+import token.TokenType._
 import token.{Token, TokenType}
-import token.TokenType.{ASSIGN, EOF, EQ, IDENT, LET, RETURN, SEMICOLON}
 
-case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
+case class Parser(lexer: Lexer) extends ParserDebugger
+  with ParserErrors
+  with ParserExpressions {
   val tokens: Seq[Seq[Token]] = {
-    lexer.next.getTokens.collect { case Some(token) => token } .sliding(2).toSeq
+    lexer.next.getTokens.collect { case Some(token) => token }.sliding(2).toSeq
   }
 
-  private final val EOFToken = Token(EOF, EOF.toString)
   var iteratorCounter: Int = 0
+
   def cToken: Option[Token] = if (iteratorCounter < tokens.length) tokens(iteratorCounter).headOption else None
+
   def pToken: Option[Token] = if (iteratorCounter < tokens.length) tokens(iteratorCounter).tail.headOption else None
 
   def expectPeek(tokenType: TokenType): Boolean = {
@@ -28,6 +32,7 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
         false
     }
   }
+
   def nextTokens(): Unit = {
     logger.whenDebugEnabled {
       debugTokens()
@@ -35,32 +40,38 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
     iteratorCounter += 1
   }
 
-  def parseExpressionMock(): Some[Expression] = {
-    while ( cToken.getOrElse(EOFToken).tokenType match {
-      case EOF => false
-      case SEMICOLON => false
-      case _ => true
-    }) {
+  def parseProgram(): Program = {
+    var programStatements = Seq.empty[Statement]
+    while (cToken.getOrElse(EOFToken).tokenType != EOF) {
+      val statement = cToken match {
+        case Some(Token(LET, _)) => parseLetStatement()
+        case Some(Token(RETURN, _)) => parseReturnStatement()
+        case _ =>
+          parseExpressionsStatement()
+      }
+      programStatements ++= Seq(statement).flatten
       nextTokens()
     }
-    Some(Identifier(EOFToken, ""))
+    Program(programStatements)
   }
-  def parseExpression(): Some[Expression] = ???
 
-  def parseIdentifier(): Option[Identifier] = {
-    if (expectPeek(IDENT)) {
-      cToken match {
-        case Some(token) => Some(Identifier(token, token.literal))
-        case _ => None
-      }
-    } else {
-      None
+  def parseExpressionsStatement(): Option[ExpressionStatement] = {
+    (cToken, parseExpression(Lowest)) match {
+      case (Some(token), Some(expression)) =>
+        pToken match {
+          case Some(Token(SEMICOLON, _)) =>
+            nextTokens()
+            Some(ExpressionStatement(token, Some(expression)))
+          case _ =>
+            Some(ExpressionStatement(token, Some(expression)))
+        }
+      case _ => None
     }
   }
 
   def parseLetStatement(): Option[LetStatement] = {
     val token = cToken.get
-    val identifier = parseIdentifier()
+    val identifier = parseIdentifierPeak()
     nextTokens()
     (cToken, identifier) match {
       case (Some(Token(ASSIGN, _)), Some(identifier)) =>
@@ -84,26 +95,18 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
     }
   }
 
-  def parseProgram(): Program = {
-    var programStatements  = Seq.empty[Statement]
-    while (cToken.getOrElse(EOFToken).tokenType != EOF) {
-      val statement = cToken match {
-        case Some(Token(LET, _)) => parseLetStatement()
-        case Some(Token(RETURN, _)) => parseReturnStatement()
-        case _ =>
-          None
-      }
-      programStatements ++= Seq(statement).flatten
-      nextTokens()
-    }
-    Program(programStatements)
-  }
 
 }
 
-trait ParserDebugger { parser: Parser =>
+trait ParserDebugger {
+  parser: Parser =>
   val logger: Logger = Logger(parser.getClass)
+
   def debugTokens(): Unit = {
     logger.debug(s"Current [$cToken] - [$pToken]O")
   }
+}
+
+object Parser {
+  final val EOFToken = Token(EOF, EOF.toString)
 }

@@ -4,6 +4,8 @@ import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import parser.ast.Statement
+import parser.ast.expressions.Identifier
+import parser.ast.statements.ExpressionStatement
 import token.Token
 import token.TokenType._
 
@@ -72,14 +74,13 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
     assert(!program.statements.exists(_.tokenLiteral != "return"))
   }
-  /*
 
   "ExpressionParser - identifiers" should "Be correctly parsed" in {
     val input = "foobar;"
 
-    val l = Lexer(input).next
+    val l = Lexer(input)
     val p = Parser(l)
-    val (program: Program, errors: Seq[ParserError]) = p.parseProgram
+    val program = p.parseProgram()
 
     assert(program.statements.length == 1)
     program.statements.head match {
@@ -94,6 +95,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       case _ => fail("Statement is not an expression statement")
     }
   }
+  /*
 
   "ExpressionParser - boolean literals" should "Be correctly parsed" in {
     val inputTrue = "true"
