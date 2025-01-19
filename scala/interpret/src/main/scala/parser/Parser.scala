@@ -3,10 +3,10 @@ package parser
 import com.typesafe.scalalogging.Logger
 import lexer.Lexer
 import parser.ast.expressions.Identifier
-import parser.ast.statements.LetStatement
+import parser.ast.statements.{LetStatement, ReturnStatement}
 import parser.ast.{Expression, Program, Statement}
 import token.{Token, TokenType}
-import token.TokenType.{ASSIGN, EOF, EQ, IDENT, LET, SEMICOLON}
+import token.TokenType.{ASSIGN, EOF, EQ, IDENT, LET, RETURN, SEMICOLON}
 
 case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
   val tokens: Seq[Seq[Token]] = {
@@ -29,6 +29,9 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
     }
   }
   def nextTokens(): Unit = {
+    logger.whenDebugEnabled {
+      debugTokens()
+    }
     iteratorCounter += 1
   }
 
@@ -70,12 +73,23 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
     }
   }
 
+  def parseReturnStatement(): Option[ReturnStatement] = {
+    val token = cToken.get
+    nextTokens()
+    parseExpressionMock() match {
+      case Some(value) =>
+        Some(ReturnStatement(token = token, returnValue = value))
+      case _ =>
+        None
+    }
+  }
+
   def parseProgram(): Program = {
     var programStatements  = Seq.empty[Statement]
     while (cToken.getOrElse(EOFToken).tokenType != EOF) {
       val statement = cToken match {
-        case Some(token) if token.tokenType == LET =>
-          parseLetStatement()
+        case Some(Token(LET, _)) => parseLetStatement()
+        case Some(Token(RETURN, _)) => parseReturnStatement()
         case _ =>
           None
       }
@@ -90,8 +104,6 @@ case class Parser(lexer: Lexer) extends ParserDebugger with ParserErrors {
 trait ParserDebugger { parser: Parser =>
   val logger: Logger = Logger(parser.getClass)
   def debugTokens(): Unit = {
-    logger.whenDebugEnabled{
-      logger.debug(s"Current [$cToken] - [$pToken]O")
-    }
+    logger.debug(s"Current [$cToken] - [$pToken]O")
   }
 }

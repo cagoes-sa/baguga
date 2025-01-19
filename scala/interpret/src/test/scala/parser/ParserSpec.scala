@@ -1,20 +1,16 @@
 package parser
 
-import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.must.Matchers.{be, defined, have}
-import org.scalatest.matchers.should.Matchers.{a, convertToAnyShouldWrapper}
-import parser.ast.expressions.{ExpressionOrdering, Identifier, InfixExpression, PrefixExpression}
-import parser.ast.statements.ExpressionStatement
-import parser.ast.{Program, Statement}
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import parser.ast.Statement
 import token.Token
 import token.TokenType._
 
 class ParserSpec extends AnyFlatSpec with ParserTestUtils {
   "tokenReader" should "iterate the lexer if each call" in {
     def input = "let x = 5;"
+
     val lexer = Lexer(input)
     val parser = Parser(lexer)
     val expectedIterations = Seq(
@@ -55,32 +51,28 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
-  /*
   "ReturnStatement" should "work" in {
     val input =
       """
       return 5;
       return 10;
       return 993322;""".stripMargin
-    val lexer = Lexer(input).next
+    val lexer = Lexer(input)
     val parser = Parser(lexer)
-    val program = parser.parseProgram
+    val program = parser.parseProgram()
     val expectedLength = 3
-    program match {
-      case (program: Program, errors: Seq[ParserError]) =>
-        if (errors.nonEmpty) {
-          println("Got the following errors: ")
-          println(errors.map(_.message).mkString("\n"))
-        }
-        if (program.statements.length != expectedLength) {
-          fail(
-            s"Program contained only ${program.statements.length} statements, should be $expectedLength"
-          )
-        }
-        assert(!program.statements.exists(_.tokenLiteral != "return"))
-      case _ => fail("parse program returned none")
+    if (parser.errors.nonEmpty) {
+      println("Got the following errors: ")
+      println(parser.errors.map(_.message).mkString("\n"))
     }
+    if (program.statements.length != expectedLength) {
+      fail(
+        s"Program contained only ${program.statements.length} statements, should be $expectedLength"
+      )
+    }
+    assert(!program.statements.exists(_.tokenLiteral != "return"))
   }
+  /*
 
   "ExpressionParser - identifiers" should "Be correctly parsed" in {
     val input = "foobar;"
