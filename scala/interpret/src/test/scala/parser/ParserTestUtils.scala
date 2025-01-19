@@ -30,14 +30,13 @@ trait ParserTestUtils {
     }
   }
 
-    /*
   def testBooleanLiteral(input: String, expectedValue: Boolean): Unit = {
-    val l = Lexer(input).next
+    val l = Lexer(input)
     val p = Parser(l)
-    val (program: Program, errors: Seq[ParserError]) = p.parseProgram
+    val program = p.parseProgram()
 
     program.statements.length shouldBe 1
-    errors shouldBe Matchers.empty
+    p.errors shouldBe Matchers.empty
     program.statements.head match {
       case stmt: ExpressionStatement =>
         stmt.expression match {
@@ -51,43 +50,44 @@ trait ParserTestUtils {
     }
   }
 
-  def testIdentifier(input: String, expectedValue: String): Unit = {
-    val l = Lexer(input).next
-    val p = Parser(l)
-    val (program: Program, errors: Seq[ParserError]) = p.parseProgram
+  /*
+def testIdentifier(input: String, expectedValue: String): Unit = {
+  val l = Lexer(input).next
+  val p = Parser(l)
+  val (program: Program, errors: Seq[ParserError]) = p.parseProgram
 
-    assert(program.statements.length == 1)
-    errors shouldBe Matchers.empty
-    program.statements.head match {
-      case stmt: ExpressionStatement =>
-        stmt.expression match {
-          case Some(ident: Identifier) =>
-            assert(ident.value == expectedValue)
-            assert(ident.tokenLiteral == expectedValue)
-          case _ => fail("Statement expression should be IntegerLiteral")
-        }
+  assert(program.statements.length == 1)
+  errors shouldBe Matchers.empty
+  program.statements.head match {
+    case stmt: ExpressionStatement =>
+      stmt.expression match {
+        case Some(ident: Identifier) =>
+          assert(ident.value == expectedValue)
+          assert(ident.tokenLiteral == expectedValue)
+        case _ => fail("Statement expression should be IntegerLiteral")
+      }
 
-      case _ => fail("Statement is not an expression statement")
-    }
+    case _ => fail("Statement is not an expression statement")
   }
+}
 
-  def testIntegerLiteral(input: String, expectedValue: BigInt): Unit = {
-    val l = Lexer(input).next
-    val p = Parser(l)
-    val (program: Program, errors: Seq[ParserError]) = p.parseProgram
+def testIntegerLiteral(input: String, expectedValue: BigInt): Unit = {
+  val l = Lexer(input).next
+  val p = Parser(l)
+  val (program: Program, errors: Seq[ParserError]) = p.parseProgram
 
-    assert(program.statements.length == 1)
-    program.statements.head match {
-      case stmt: ExpressionStatement =>
-        stmt.expression match {
-          case Some(ident: IntegerLiteral) =>
-            assert(ident.value == expectedValue)
-            assert(ident.tokenLiteral == expectedValue.toString)
-          case _ => fail("Statement expression should be IntegerLiteral")
-        }
+  assert(program.statements.length == 1)
+  program.statements.head match {
+    case stmt: ExpressionStatement =>
+      stmt.expression match {
+        case Some(ident: IntegerLiteral) =>
+          assert(ident.value == expectedValue)
+          assert(ident.tokenLiteral == expectedValue.toString)
+        case _ => fail("Statement expression should be IntegerLiteral")
+      }
 
-      case _ => fail("Statement is not an expression statement")
-    }
+    case _ => fail("Statement is not an expression statement")
   }
+}
 */
 }

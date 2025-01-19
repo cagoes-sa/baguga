@@ -95,7 +95,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       case _ => fail("Statement is not an expression statement")
     }
   }
-  /*
 
   "ExpressionParser - boolean literals" should "Be correctly parsed" in {
     val inputTrue = "true"
@@ -103,6 +102,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val inputFalse = "false;"
     testBooleanLiteral(inputFalse, expectedValue = false)
   }
+  /*
 
   "ExpressionParser - integer literals" should "Be correctly parsed" in {
     val input = "420;"
