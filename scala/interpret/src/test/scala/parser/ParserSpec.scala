@@ -4,7 +4,7 @@ import errors.ParserError
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.must.Matchers.{defined, have}
+import org.scalatest.matchers.must.Matchers.{be, defined, have}
 import org.scalatest.matchers.should.Matchers.{a, convertToAnyShouldWrapper}
 import parser.ast.expressions.{ExpressionOrdering, Identifier, InfixExpression, PrefixExpression}
 import parser.ast.statements.ExpressionStatement
@@ -31,7 +31,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         parser.nextTokens()
     }
   }
-  /*
 
   "LetStatement" should "work" in {
     val input =
@@ -39,30 +38,24 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         let x = 5;
         let y = 10;
         let foobar = 838383;""".stripMargin
-    val lexer = Lexer(input).next
+    val lexer = Lexer(input)
     val parser = Parser(lexer)
-    val program = parser.parseProgram
+    val program = parser.parseProgram()
     val expectedLength = 3
     val expectedIdentifiers = Seq("x", "y", "foobar")
-    program match {
-      case (program: Program, errors: Seq[ParserError]) =>
-        if (errors.nonEmpty) {
-          println("Got the following errors: ")
-          println(errors.map(_.message).mkString("\n"))
-        }
-        if (program.statements.length != expectedLength) {
-          fail(
-            s"Program contained only ${program.statements.length} statements, should be $expectedLength"
-          )
-        }
-        program.statements.zip(expectedIdentifiers).map {
-          case (statement: Statement, identifier: String) =>
-            testLetStatement(statement, identifier)
-        }
-      case _ => fail("parse program returned none")
+    parser.errors.length shouldEqual 0
+    if (program.statements.length != expectedLength) {
+      fail(
+        s"Program contained only ${program.statements.length} statements, should be $expectedLength"
+      )
+    }
+    program.statements.zip(expectedIdentifiers).map {
+      case (statement: Statement, identifier: String) =>
+        testLetStatement(statement, identifier)
     }
   }
 
+  /*
   "ReturnStatement" should "work" in {
     val input =
       """
