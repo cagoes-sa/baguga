@@ -2,9 +2,10 @@ package parser
 
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.must.Matchers.{a, have}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import parser.ast.Statement
-import parser.ast.expressions.Identifier
+import parser.ast.expressions.{Identifier, PrefixExpression}
 import parser.ast.statements.ExpressionStatement
 import token.Token
 import token.TokenType._
@@ -108,7 +109,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     testIntegerLiteral(input, 420)
   }
 
-  /*
   "ExpressionParser - Prefix Operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String, BigInt)] = Seq(
@@ -118,9 +118,9 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
     prefixTests.foreach {
       case (input: String, operator: String, value: BigInt) =>
-        val l = Lexer(input).next
+        val l = Lexer(input)
         val p = Parser(l)
-        val (program, errors) = p.parseProgram
+        val program = p.parseProgram()
         program.statements should have length 1
         program.statements.head match {
           case es: ExpressionStatement if es.expression.nonEmpty =>
@@ -134,6 +134,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
+  /*
   "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
     val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
     val l = Lexer(input).next
