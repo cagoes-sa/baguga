@@ -1,6 +1,5 @@
 package parser
 
-import com.typesafe.scalalogging.Logger
 import lexer.Lexer
 import parser.Parser.EOFToken
 import parser.ast.expressions.ExpressionOrdering.Lowest
