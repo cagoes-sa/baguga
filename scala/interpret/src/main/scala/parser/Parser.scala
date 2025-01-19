@@ -98,14 +98,7 @@ case class Parser(lexer: Lexer) extends ParserDebugger
 
 }
 
-trait ParserDebugger {
-  parser: Parser =>
-  val logger: Logger = Logger(parser.getClass)
 
-  def debugTokens(): Unit = {
-    logger.debug(s"Current [$cToken] - [$pToken]O")
-  }
-}
 
 object Parser {
   final val EOFToken = Token(EOF, EOF.toString)
