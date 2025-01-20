@@ -3,10 +3,10 @@ package parser
 import errors.ParserError
 import parser.Parser.EOFToken
 import parser.ast.Expression
-import parser.ast.expressions.ExpressionOrdering.Prefix
-import parser.ast.expressions.{BooleanLiteral, ExpressionOrdering, Identifier, IntegerLiteral, PrefixExpression}
-import token.{Token, TokenType}
+import parser.ast.expressions.ExpressionOrdering._
+import parser.ast.expressions._
 import token.TokenType.{EOF, IDENT, SEMICOLON}
+import token.{Token, TokenType}
 
 trait ParserExpressions {
   parser: Parser with ParserErrors =>
@@ -18,6 +18,16 @@ trait ParserExpressions {
     TokenType.INT -> parseInteger,
     TokenType.BANG -> parsePrefixExpression,
     TokenType.MINUS -> parsePrefixExpression
+  )
+  final val precedence: Map[TokenType, ExpressionOrdering] = Map(
+    TokenType.EQ -> Equal,
+    TokenType.NOT_EQ -> Equal,
+    TokenType.LT -> LessGreater,
+    TokenType.GT -> LessGreater,
+    TokenType.PLUS -> Sum,
+    TokenType.MINUS -> Sum,
+    TokenType.SLASH -> Product,
+    TokenType.ASTERISK -> Product
   )
 
   def withNoPrefixParserFoundFor(token: Option[Token]): Unit = {
