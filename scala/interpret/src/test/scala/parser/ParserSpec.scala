@@ -178,12 +178,12 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
     val prefixTests: Seq[(String, String)] = Seq(
       (
-        "1 + (2 + 3) + 4",
-        "((1 + (2 + 3)) + 4)",
-      ),
-      (
         "(5 + 5) * 2",
         "((5 + 5) * 2)",
+      ),
+      (
+        "1 + (2 + 3) + 4",
+        "((1 + (2 + 3)) + 4)",
       ),
       (
         "2 / (5 + 5)",
@@ -204,8 +204,8 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
         val p = Parser(l)
         val expression = p.parseProgram()
         println(s"Expression output: ${expression.string}")
-        expression.string shouldEqual expected
         p.errors shouldBe Matchers.empty
+        expression.string shouldEqual expected
 
       case _ => fail("Statement is not a prefix expression")
     }

@@ -5,7 +5,7 @@ import parser.Parser.EOFToken
 import parser.ast.Expression
 import parser.ast.expressions.ExpressionOrdering._
 import parser.ast.expressions._
-import token.TokenType.{EOF, IDENT, SEMICOLON}
+import token.TokenType.{EOF, IDENT, LPAREN, RPAREN, SEMICOLON}
 import token.{Token, TokenType}
 
 trait ParserExpressions {
@@ -13,12 +13,13 @@ trait ParserExpressions {
   final type PrefixParserFn = () => Option[Expression]
   final type InfixParserFn = Expression => Option[Expression]
   final val prefixParserFns: Map[TokenType, PrefixParserFn] = Map(
-    TokenType.IDENT -> parseIdentifier,
-    TokenType.TRUE -> parseBoolean,
-    TokenType.FALSE -> parseBoolean,
-    TokenType.INT -> parseInteger,
     TokenType.BANG -> parsePrefixExpression,
-    TokenType.MINUS -> parsePrefixExpression
+    TokenType.FALSE -> parseBoolean,
+    TokenType.IDENT -> parseIdentifier,
+    TokenType.INT -> parseInteger,
+    TokenType.LPAREN -> parseGroupedExpression,
+    TokenType.MINUS -> parsePrefixExpression,
+    TokenType.TRUE -> parseBoolean,
   )
   final val infixParserFns: Map[TokenType, InfixParserFn] = Map(
     (TokenType.PLUS, parseInfixExpression),
@@ -70,7 +71,6 @@ trait ParserExpressions {
   def currPrecedence: ExpressionOrdering = precedence.getOrElse(cToken.getOrElse(EOFToken).tokenType, Lowest)
 
   def parseExpression(precedence: ExpressionOrdering): Option[Expression] = {
-    logger.debug("On parse expression")
     var leftExp: Option[Expression] = prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
       case Some(function: PrefixParserFn) => function()
       case None =>
@@ -84,13 +84,10 @@ trait ParserExpressions {
         case _ => true
       }
     } && (precedence < peekPrecedence)) {
-      logger.debug("Passing on loop")
-      logger.debug(s"Expression in ${leftExp.getOrElse(Identifier(EOFToken, "")).toString}")
       infixParserFns.get(pToken.getOrElse(EOFToken).tokenType) match {
         case Some(function: InfixParserFn) =>
           leftExp = leftExp match {
             case Some(leftExp) =>
-              logger.debug("Going to infix")
               nextTokens()
               function(leftExp)
             case None =>
@@ -103,11 +100,26 @@ trait ParserExpressions {
     leftExp
   }
 
-
   def peekPrecedence: ExpressionOrdering = precedence.getOrElse(pToken.getOrElse(EOFToken).tokenType, Lowest)
 
   def withNoPrefixParserFoundFor(token: Option[Token]): Unit = {
     parser.errors ++= Seq(ParserError(s"No prefix parser function found for $token"))
+  }
+
+  def parseGroupedExpression(): Option[Expression] = {
+    logger.debug("Start of grouped expression")
+    nextTokens()
+    parseExpression(Lowest) match {
+      case Some(expression) =>
+        if (expectPeek(RPAREN)) {
+          logger.debug("End of grouped expression")
+          Some(expression)
+        } else {
+          logger.debug(s"Bad End of grouped expression, expression = ${expression.toString}")
+          None
+        }
+      case _ => None
+    }
   }
 
   def parsePrefixExpression(): Option[PrefixExpression] = {
