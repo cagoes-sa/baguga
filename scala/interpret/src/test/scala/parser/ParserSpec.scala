@@ -181,7 +181,6 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     println(program.toString)
   }
 
-  /*
   "ExpressionParser - Infix Operators - testing really complex operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String)] = Seq(
@@ -248,50 +247,19 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
     prefixTests.foreach {
       case (
-            input: String,
-            expected: String
-          ) =>
-        val l = Lexer(input).next
+        input: String,
+        expected: String
+        ) =>
+        val l = Lexer(input)
         val p = Parser(l)
-        val (expression, errors) = p.parseProgram
+        val expression = p.parseProgram()
         println(s"Expression output: ${expression.string}")
         expression.string shouldEqual expected
-        errors shouldBe Matchers.empty
+        p.errors shouldBe Matchers.empty
 
       case _ => fail("Statement is not a prefix expression")
     }
   }
 
-  "ExpressionParser - Infix Operators - complex operators" should "Be correctly parsed" in {
 
-    val prefixTests: Seq[(String, String)] = Seq(
-      ("1 + 2 + 3;", ""),
-      ("1 + 2;", ""),
-      ("1 + 2 * 3;", ""),
-      ("-!a", ""),
-      ("-!a+b", "")
-    )
-
-    prefixTests.foreach {
-      case (
-            input: String,
-            _: String
-          ) =>
-        val l = Lexer(input).next
-        val p = Parser(l)
-        val (Some(c), optionP) = p.nextTokenPointers
-        val (expression, errors) =
-          p.parseExpression(ExpressionOrdering.Lowest, c, optionP)
-        expression match {
-          case Some(expression) =>
-            println(s"Expression output: ${expression.string}")
-          case None => println("Expression returned empty!")
-        }
-        errors shouldBe Matchers.empty
-
-      case _ => fail("Statement is not a prefix expression")
-    }
-  }
-
-*/
 }
