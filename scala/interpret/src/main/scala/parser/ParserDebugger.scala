@@ -7,6 +7,6 @@ trait ParserDebugger {
   val logger: Logger = Logger(parser.getClass)
 
   def debugTokens(): Unit = {
-    logger.debug(s"Current [$cToken] - [$pToken]O")
+    logger.debug(s"Current [$cToken] - Peek [$pToken]")
   }
 }

@@ -2,10 +2,11 @@ package parser
 
 import lexer.Lexer
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.must.Matchers.{a, have}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import parser.ast.Statement
-import parser.ast.expressions.{Identifier, PrefixExpression}
+import parser.ast.expressions.{Identifier, InfixExpression, PrefixExpression}
 import parser.ast.statements.ExpressionStatement
 import token.Token
 import token.TokenType._
@@ -134,16 +135,53 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
-  /*
-  "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
-    val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
-    val l = Lexer(input).next
-    val p = Parser(l)
-    val (expression, errors) = p.parseProgram
-    expression.string shouldEqual expected
-    errors shouldBe Matchers.empty
+  "ExpressionParser - Infix Operators" should "Be correctly parsed" in {
+
+    val prefixTests: Seq[(String, BigInt, String, BigInt)] = Seq(
+      ("5 + 5;", 5, "+", 5),
+      ("5 - 5;", 5, "-", 5),
+      ("5 * 5;", 5, "*", 5),
+      ("5 / 5;", 5, "/", 5),
+      ("5 > 5;", 5, ">", 5),
+      ("5 < 5;", 5, "<", 5),
+      ("5 == 5;", 5, "==", 5),
+      ("5 != 5;", 5, "!=", 5)
+    )
+
+    prefixTests.foreach {
+      case (
+        input: String,
+        leftValue: BigInt,
+        operator: String,
+        rightValue: BigInt
+        ) =>
+        val l = Lexer(input)
+        val p = Parser(l)
+        val program = p.parseProgram()
+        p.errors shouldBe Matchers.empty
+        program.statements should have length 1
+        program.statements.head match {
+          case es: ExpressionStatement if es.expression.nonEmpty =>
+            es.expression.get shouldBe a[InfixExpression]
+            val expression = es.expression.get.asInstanceOf[InfixExpression]
+            expression.operator shouldEqual operator
+            testIntegerLiteral(expression.right.string + ";", rightValue)
+            testIntegerLiteral(expression.left.string + ";", leftValue)
+
+          case _ => fail("Statement is not a prefix expression")
+        }
+    }
   }
 
+  "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
+    val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
+    val l = Lexer(input)
+    val p = Parser(l)
+    val program = p.parseProgram()
+    println(program.toString)
+  }
+
+  /*
   "ExpressionParser - Infix Operators - testing really complex operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String)] = Seq(
@@ -255,42 +293,5 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
-  "ExpressionParser - Infix Operators" should "Be correctly parsed" in {
-
-    val prefixTests: Seq[(String, BigInt, String, BigInt)] = Seq(
-      ("5 + 5;", 5, "+", 5),
-      ("5 - 5;", 5, "-", 5),
-      ("5 * 5;", 5, "*", 5),
-      ("5 / 5;", 5, "/", 5),
-      ("5 > 5;", 5, ">", 5),
-      ("5 < 5;", 5, "<", 5),
-      ("5 == 5;", 5, "==", 5),
-      ("5 != 5;", 5, "!=", 5)
-    )
-
-    prefixTests.foreach {
-      case (
-            input: String,
-            leftValue: BigInt,
-            operator: String,
-            rightValue: BigInt
-          ) =>
-        val l = Lexer(input).next
-        val p = Parser(l)
-        val (program, errors) = p.parseProgram
-        errors shouldBe Matchers.empty
-        program.statements should have length 1
-        program.statements.head match {
-          case es: ExpressionStatement if es.expression.nonEmpty =>
-            es.expression.get shouldBe a[InfixExpression]
-            val expression = es.expression.get.asInstanceOf[InfixExpression]
-            expression.operator shouldEqual operator
-            testIntegerLiteral(expression.right.string + ";", rightValue)
-            testIntegerLiteral(expression.left.string + ";", leftValue)
-
-          case _ => fail("Statement is not a prefix expression")
-        }
-    }
-  }
 */
 }

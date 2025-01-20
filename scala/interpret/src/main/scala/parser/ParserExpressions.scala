@@ -11,6 +11,7 @@ import token.{Token, TokenType}
 trait ParserExpressions {
   parser: Parser with ParserErrors =>
   final type PrefixParserFn = () => Option[Expression]
+  final type InfixParserFn = Expression => Option[Expression]
   final val prefixParserFns: Map[TokenType, PrefixParserFn] = Map(
     TokenType.IDENT -> parseIdentifier,
     TokenType.TRUE -> parseBoolean,
@@ -19,6 +20,21 @@ trait ParserExpressions {
     TokenType.BANG -> parsePrefixExpression,
     TokenType.MINUS -> parsePrefixExpression
   )
+  final val infixParserFns: Map[TokenType, InfixParserFn] = Map(
+    (TokenType.PLUS, parseInfixExpression),
+    (TokenType.MINUS, parseInfixExpression),
+    (TokenType.SLASH, parseInfixExpression),
+    (TokenType.ASTERISK, parseInfixExpression),
+    (TokenType.EQ, parseInfixExpression),
+    (TokenType.NOT_EQ, parseInfixExpression),
+    (TokenType.LT, parseInfixExpression),
+    (TokenType.GT, parseInfixExpression),
+  )
+
+  def currPrecedence: ExpressionOrdering = precedence.getOrElse(cToken.getOrElse(EOFToken).tokenType, Lowest)
+
+  def peekPrecedence: ExpressionOrdering = precedence.getOrElse(pToken.getOrElse(EOFToken).tokenType, Lowest)
+
   final val precedence: Map[TokenType, ExpressionOrdering] = Map(
     TokenType.EQ -> Equal,
     TokenType.NOT_EQ -> Equal,
@@ -34,12 +50,29 @@ trait ParserExpressions {
     parser.errors ++= Seq(ParserError(s"No prefix parser function found for $token"))
   }
 
+
   def parseExpression(precedence: ExpressionOrdering): Option[Expression] = {
-    val leftExp: Option[Expression] = prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
+    logger.debug("On parse expression")
+    var leftExp: Option[Expression] = prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
       case Some(function: PrefixParserFn) => function()
       case None =>
         withNoPrefixParserFoundFor(cToken)
         None
+    }
+    while ((pToken.getOrElse(EOFToken).tokenType != SEMICOLON) && (precedence < peekPrecedence)) {
+      logger.debug("Passing on loop")
+      logger.debug(s"Expression in ${leftExp.getOrElse(Identifier(EOFToken, "")).toString}")
+      infixParserFns.get(pToken.getOrElse(EOFToken).tokenType) match {
+        case Some(function: InfixParserFn) =>
+          leftExp = leftExp match {
+            case Some(leftExp) =>
+              logger.debug("Going to infix")
+              nextTokens()
+              function(leftExp)
+            case None => None
+          }
+        case None =>
+      }
     }
     leftExp
   }
@@ -53,6 +86,21 @@ trait ParserExpressions {
       nextTokens()
     }
     Some(Identifier(EOFToken, ""))
+  }
+
+  def parseInfixExpression(leftExpression: Expression): Option[InfixExpression] = {
+    cToken match {
+      case Some(token) =>
+        logger.debug("On infix")
+        val operator = token.literal
+        val precedence = currPrecedence
+        nextTokens()
+        parser.parseExpression(precedence) match {
+          case Some(rightExpression) => Some(InfixExpression(token, operator, leftExpression, rightExpression))
+          case _ => None
+        }
+      case None => None
+    }
   }
 
   def parsePrefixExpression(): Option[PrefixExpression] = {

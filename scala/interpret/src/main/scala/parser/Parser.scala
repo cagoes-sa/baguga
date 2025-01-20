@@ -33,10 +33,10 @@ case class Parser(lexer: Lexer) extends ParserDebugger
   }
 
   def nextTokens(): Unit = {
+    iteratorCounter += 1
     logger.whenDebugEnabled {
       debugTokens()
     }
-    iteratorCounter += 1
   }
 
   def parseProgram(): Program = {
@@ -96,7 +96,6 @@ case class Parser(lexer: Lexer) extends ParserDebugger
 
 
 }
-
 
 
 object Parser {
