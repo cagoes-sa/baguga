@@ -30,11 +30,6 @@ trait ParserExpressions {
     (TokenType.LT, parseInfixExpression),
     (TokenType.GT, parseInfixExpression),
   )
-
-  def currPrecedence: ExpressionOrdering = precedence.getOrElse(cToken.getOrElse(EOFToken).tokenType, Lowest)
-
-  def peekPrecedence: ExpressionOrdering = precedence.getOrElse(pToken.getOrElse(EOFToken).tokenType, Lowest)
-
   final val precedence: Map[TokenType, ExpressionOrdering] = Map(
     TokenType.EQ -> Equal,
     TokenType.NOT_EQ -> Equal,
@@ -45,37 +40,6 @@ trait ParserExpressions {
     TokenType.SLASH -> Product,
     TokenType.ASTERISK -> Product
   )
-
-  def withNoPrefixParserFoundFor(token: Option[Token]): Unit = {
-    parser.errors ++= Seq(ParserError(s"No prefix parser function found for $token"))
-  }
-
-
-  def parseExpression(precedence: ExpressionOrdering): Option[Expression] = {
-    logger.debug("On parse expression")
-    var leftExp: Option[Expression] = prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
-      case Some(function: PrefixParserFn) => function()
-      case None =>
-        withNoPrefixParserFoundFor(cToken)
-        None
-    }
-    while ((pToken.getOrElse(EOFToken).tokenType != SEMICOLON) && (precedence < peekPrecedence)) {
-      logger.debug("Passing on loop")
-      logger.debug(s"Expression in ${leftExp.getOrElse(Identifier(EOFToken, "")).toString}")
-      infixParserFns.get(pToken.getOrElse(EOFToken).tokenType) match {
-        case Some(function: InfixParserFn) =>
-          leftExp = leftExp match {
-            case Some(leftExp) =>
-              logger.debug("Going to infix")
-              nextTokens()
-              function(leftExp)
-            case None => None
-          }
-        case None =>
-      }
-    }
-    leftExp
-  }
 
   def parseExpressionMock(): Some[Expression] = {
     while (cToken.getOrElse(EOFToken).tokenType match {
@@ -101,6 +65,49 @@ trait ParserExpressions {
         }
       case None => None
     }
+  }
+
+  def currPrecedence: ExpressionOrdering = precedence.getOrElse(cToken.getOrElse(EOFToken).tokenType, Lowest)
+
+  def parseExpression(precedence: ExpressionOrdering): Option[Expression] = {
+    logger.debug("On parse expression")
+    var leftExp: Option[Expression] = prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
+      case Some(function: PrefixParserFn) => function()
+      case None =>
+        withNoPrefixParserFoundFor(cToken)
+        None
+    }
+    while ( {
+      pToken.getOrElse(EOFToken).tokenType match {
+        case SEMICOLON => false
+        case EOF => false
+        case _ => true
+      }
+    } && (precedence < peekPrecedence)) {
+      logger.debug("Passing on loop")
+      logger.debug(s"Expression in ${leftExp.getOrElse(Identifier(EOFToken, "")).toString}")
+      infixParserFns.get(pToken.getOrElse(EOFToken).tokenType) match {
+        case Some(function: InfixParserFn) =>
+          leftExp = leftExp match {
+            case Some(leftExp) =>
+              logger.debug("Going to infix")
+              nextTokens()
+              function(leftExp)
+            case None =>
+              nextTokens()
+              None
+          }
+        case None =>
+      }
+    }
+    leftExp
+  }
+
+
+  def peekPrecedence: ExpressionOrdering = precedence.getOrElse(pToken.getOrElse(EOFToken).tokenType, Lowest)
+
+  def withNoPrefixParserFoundFor(token: Option[Token]): Unit = {
+    parser.errors ++= Seq(ParserError(s"No prefix parser function found for $token"))
   }
 
   def parsePrefixExpression(): Option[PrefixExpression] = {

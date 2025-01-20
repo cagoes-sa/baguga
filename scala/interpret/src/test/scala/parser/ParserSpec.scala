@@ -173,14 +173,43 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
-  "ExpressionParser - Infix operators  with final tokens" should "stop and go to other programs" in {
-    val (input, expected) = ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")
-    val l = Lexer(input)
-    val p = Parser(l)
-    val program = p.parseProgram()
-    println(program.toString)
-  }
 
+  "ExpressionParser - Infix Operators - Grouped Expressions" should "Be correctly parsed" in {
+
+    val prefixTests: Seq[(String, String)] = Seq(
+      (
+        "1 + (2 + 3) + 4",
+        "((1 + (2 + 3)) + 4)",
+      ),
+      (
+        "(5 + 5) * 2",
+        "((5 + 5) * 2)",
+      ),
+      (
+        "2 / (5 + 5)",
+        "(2 / (5 + 5))",
+      ),
+      (
+        "-(5 + 5)",
+        "(-(5 + 5))",
+      ),
+    )
+
+    prefixTests.foreach {
+      case (
+        input: String,
+        expected: String
+        ) =>
+        val l = Lexer(input)
+        val p = Parser(l)
+        val expression = p.parseProgram()
+        println(s"Expression output: ${expression.string}")
+        expression.string shouldEqual expected
+        p.errors shouldBe Matchers.empty
+
+      case _ => fail("Statement is not a prefix expression")
+    }
+  }
   "ExpressionParser - Infix Operators - testing really complex operators" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String)] = Seq(
