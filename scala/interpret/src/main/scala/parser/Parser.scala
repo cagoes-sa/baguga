@@ -75,20 +75,22 @@ case class Parser(lexer: Lexer)
     val token = cToken
     logger.debug(s"Parsing block statement, first token is $token")
     token match {
-      case Some(Token())
+      case Some(token) if token.tokenType == LBRACE =>
+        nextTokens()
+        var statements = Seq.empty[Statement]
+        while (
+          cToken.getOrElse(EOFToken).tokenType match {
+            case TokenType.RBRACE => false
+            case TokenType.EOF    => false
+            case _                => true
+          }
+        ) {
+          statements ++= Seq(parseStatement()).flatten
+          nextTokens()
+        }
+        Some(BlockStatement(token, statements))
+      case _ => None
     }
-    var statements = Seq.empty[Statement]
-    while (
-      cToken.getOrElse(EOFToken).tokenType match {
-        case TokenType.RBRACE => false
-        case TokenType.EOF    => false
-        case _                => true
-      }
-    ) {
-      statements ++= Seq(parseStatement()).flatten
-      nextTokens()
-    }
-    Some(BlockStatement(token.getOrElse(EOFToken), statements))
   }
 
   def parseExpressionsStatement(): Option[ExpressionStatement] = {
