@@ -3,23 +3,33 @@ package parser
 import lexer.Lexer
 import parser.Parser.EOFToken
 import parser.ast.expressions.ExpressionOrdering.Lowest
-import parser.ast.statements.{ExpressionStatement, LetStatement, ReturnStatement}
+import parser.ast.statements.{
+  BlockStatement,
+  ExpressionStatement,
+  LetStatement,
+  ReturnStatement
+}
 import parser.ast.{Program, Statement}
 import token.TokenType._
 import token.{Token, TokenType}
 
-case class Parser(lexer: Lexer) extends ParserDebugger
-  with ParserErrors
-  with ParserExpressions {
+case class Parser(lexer: Lexer)
+    extends ParserDebugger
+    with ParserErrors
+    with ParserExpressions {
   val tokens: Seq[Seq[Token]] = {
     lexer.next.getTokens.collect { case Some(token) => token }.sliding(2).toSeq
   }
 
   var iteratorCounter: Int = 0
 
-  def cToken: Option[Token] = if (iteratorCounter < tokens.length) tokens(iteratorCounter).headOption else None
+  def cToken: Option[Token] = if (iteratorCounter < tokens.length)
+    tokens(iteratorCounter).headOption
+  else None
 
-  def pToken: Option[Token] = if (iteratorCounter < tokens.length) tokens(iteratorCounter).tail.headOption else None
+  def pToken: Option[Token] = if (iteratorCounter < tokens.length)
+    tokens(iteratorCounter).tail.headOption
+  else None
 
   def expectPeek(tokenType: TokenType): Boolean = {
     pToken match {
@@ -43,7 +53,7 @@ case class Parser(lexer: Lexer) extends ParserDebugger
     var programStatements = Seq.empty[Statement]
     while (cToken.getOrElse(EOFToken).tokenType != EOF) {
       val statement = cToken match {
-        case Some(Token(LET, _)) => parseLetStatement()
+        case Some(Token(LET, _))    => parseLetStatement()
         case Some(Token(RETURN, _)) => parseReturnStatement()
         case _ =>
           parseExpressionsStatement()
@@ -52,6 +62,33 @@ case class Parser(lexer: Lexer) extends ParserDebugger
       nextTokens()
     }
     Program(programStatements)
+  }
+
+  def parseStatement(): Option[Statement] = cToken match {
+    case Some(Token(LET, _))    => parseLetStatement()
+    case Some(Token(RETURN, _)) => parseReturnStatement()
+    case _ =>
+      parseExpressionsStatement()
+  }
+
+  def parseBlockStatement(): Option[BlockStatement] = {
+    val token = cToken
+    logger.debug(s"Parsing block statement, first token is $token")
+    token match {
+      case Some(Token())
+    }
+    var statements = Seq.empty[Statement]
+    while (
+      cToken.getOrElse(EOFToken).tokenType match {
+        case TokenType.RBRACE => false
+        case TokenType.EOF    => false
+        case _                => true
+      }
+    ) {
+      statements ++= Seq(parseStatement()).flatten
+      nextTokens()
+    }
+    Some(BlockStatement(token.getOrElse(EOFToken), statements))
   }
 
   def parseExpressionsStatement(): Option[ExpressionStatement] = {
@@ -94,9 +131,7 @@ case class Parser(lexer: Lexer) extends ParserDebugger
     }
   }
 
-
 }
-
 
 object Parser {
   final val EOFToken = Token(EOF, EOF.toString)

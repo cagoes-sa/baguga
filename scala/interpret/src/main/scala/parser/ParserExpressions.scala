@@ -19,7 +19,8 @@ trait ParserExpressions {
     TokenType.INT -> parseInteger,
     TokenType.LPAREN -> parseGroupedExpression,
     TokenType.MINUS -> parsePrefixExpression,
-    TokenType.TRUE -> parseBoolean
+    TokenType.TRUE -> parseBoolean,
+    TokenType.IF -> parseIfExpression
   )
   final val infixParserFns: Map[TokenType, InfixParserFn] = Map(
     (TokenType.PLUS, parseInfixExpression),
@@ -141,12 +142,15 @@ trait ParserExpressions {
     if (!expectPeek(LPAREN)) {
       None
     } else {
-      parser.nextTokens()
-      val condition = parser.parseExpression(Lowest)
-      if (!expectPeek(RPAREN)) {
-        None
-      } else {
-        val consequence = parser.parseBlockStatement()
+      val condition = parser.parseGroupedExpression()
+      parser.nextTokens() // Jumping over RPAREN
+      val consequence = parser.parseBlockStatement()
+      (condition, consequence) match {
+        case (Some(condition), Some(consequence)) =>
+          Some(
+            IfExpression(token.getOrElse(EOFToken), condition, consequence)
+          )
+        case _ => None
       }
     }
   }

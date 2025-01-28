@@ -294,6 +294,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     val p = Parser(l)
     val program = p.parseProgram()
     println(p.errors.mkString("\n"))
+    println(program.string)
 
   }
 

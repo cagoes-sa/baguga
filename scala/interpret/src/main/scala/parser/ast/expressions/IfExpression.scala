@@ -16,7 +16,7 @@ case class IfExpression(
   override def tokenLiteral: String = token.literal
 
   override def string: String = {
-    s"if ${condition.string} ${consequence.string}" + {
+    s"if ${condition.string}  ${consequence.string}" + {
       alternative match {
         case Some(alternative) => s"else ${alternative.string}"
         case None              => ""
