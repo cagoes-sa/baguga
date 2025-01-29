@@ -113,7 +113,8 @@ case class Parser(lexer: Lexer)
     nextTokens()
     (cToken, identifier) match {
       case (Some(Token(ASSIGN, _)), Some(identifier)) =>
-        parseExpressionMock() match {
+        nextTokens()
+        parseExpression(Lowest) match {
           case Some(value) =>
             Some(LetStatement(token, identifier, value))
           case _ => None
@@ -125,7 +126,7 @@ case class Parser(lexer: Lexer)
   def parseReturnStatement(): Option[ReturnStatement] = {
     val token = cToken.get
     nextTokens()
-    parseExpressionMock() match {
+    parseExpression(Lowest) match {
       case Some(value) =>
         Some(ReturnStatement(token = token, returnValue = value))
       case _ =>
