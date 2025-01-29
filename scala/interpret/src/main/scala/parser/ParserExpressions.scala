@@ -5,7 +5,7 @@ import parser.Parser.EOFToken
 import parser.ast.Expression
 import parser.ast.expressions.ExpressionOrdering._
 import parser.ast.expressions._
-import token.TokenType.{EOF, IDENT, LPAREN, RPAREN, SEMICOLON}
+import token.TokenType.{ELSE, EOF, IDENT, LPAREN, RBRACE, RPAREN, SEMICOLON}
 import token.{Token, TokenType}
 
 trait ParserExpressions {
@@ -147,9 +147,26 @@ trait ParserExpressions {
       val consequence = parser.parseBlockStatement()
       (condition, consequence) match {
         case (Some(condition), Some(consequence)) =>
-          Some(
-            IfExpression(token.getOrElse(EOFToken), condition, consequence)
-          )
+          (cToken, pToken) match {
+            case (Some(Token(RBRACE, _)), Some(Token(ELSE, _))) =>
+              parser.nextTokens()
+              parser.nextTokens()
+              val alternative = parser.parseBlockStatement()
+              Some(
+                IfExpression(
+                  token.getOrElse(EOFToken),
+                  condition,
+                  consequence,
+                  alternative
+                )
+              )
+            case (Some(Token(RBRACE, _)), _) =>
+              Some(
+                IfExpression(token.getOrElse(EOFToken), condition, consequence)
+              )
+            case _ => None
+
+          }
         case _ => None
       }
     }

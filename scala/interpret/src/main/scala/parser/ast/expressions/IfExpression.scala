@@ -18,7 +18,7 @@ case class IfExpression(
   override def string: String = {
     s"if ${condition.string}  ${consequence.string}" + {
       alternative match {
-        case Some(alternative) => s"else ${alternative.string}"
+        case Some(alternative) => s" else ${alternative.string}"
         case None              => ""
       }
     }
