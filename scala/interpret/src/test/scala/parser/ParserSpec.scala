@@ -24,11 +24,10 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
       (Token(INT, "5"), Token(SEMICOLON, ";")),
       (Token(SEMICOLON, ";"), Token(EOF, ""))
     )
-    expectedIterations.map {
-      case (cExpected: Token, pExpected: Token) =>
-        parser.cToken shouldEqual Some(cExpected)
-        parser.pToken shouldEqual Some(pExpected)
-        parser.nextTokens()
+    expectedIterations.map { case (cExpected: Token, pExpected: Token) =>
+      parser.cToken shouldEqual Some(cExpected)
+      parser.pToken shouldEqual Some(pExpected)
+      parser.nextTokens()
     }
   }
 
@@ -150,11 +149,11 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
     prefixTests.foreach {
       case (
-        input: String,
-        leftValue: BigInt,
-        operator: String,
-        rightValue: BigInt
-        ) =>
+            input: String,
+            leftValue: BigInt,
+            operator: String,
+            rightValue: BigInt
+          ) =>
         val l = Lexer(input)
         val p = Parser(l)
         val program = p.parseProgram()
@@ -173,33 +172,32 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
-
   "ExpressionParser - Infix Operators - Grouped Expressions" should "Be correctly parsed" in {
 
     val prefixTests: Seq[(String, String)] = Seq(
       (
         "(5 + 5) * 2",
-        "((5 + 5) * 2)",
+        "((5 + 5) * 2)"
       ),
       (
         "1 + (2 + 3) + 4",
-        "((1 + (2 + 3)) + 4)",
+        "((1 + (2 + 3)) + 4)"
       ),
       (
         "2 / (5 + 5)",
-        "(2 / (5 + 5))",
+        "(2 / (5 + 5))"
       ),
       (
         "-(5 + 5)",
-        "(-(5 + 5))",
-      ),
+        "(-(5 + 5))"
+      )
     )
 
     prefixTests.foreach {
       case (
-        input: String,
-        expected: String
-        ) =>
+            input: String,
+            expected: String
+          ) =>
         val l = Lexer(input)
         val p = Parser(l)
         val expression = p.parseProgram()
@@ -276,9 +274,9 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
 
     prefixTests.foreach {
       case (
-        input: String,
-        expected: String
-        ) =>
+            input: String,
+            expected: String
+          ) =>
         val l = Lexer(input)
         val p = Parser(l)
         val expression = p.parseProgram()
@@ -290,5 +288,22 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     }
   }
 
+  "If Expressions" should "be correctly parsed" in {
+    val input = "if (x < y) { x }"
+    val l = Lexer(input)
+    val p = Parser(l)
+    val program = p.parseProgram()
+    println(p.errors.mkString("\n"))
+    println(program.string)
+  }
+
+  "IfElse Expressions" should "be correctly parsed" in {
+    val input = "if (x < y) { let y = x + 1; return 5; } else { return y; }"
+    val l = Lexer(input)
+    val p = Parser(l)
+    val program = p.parseProgram()
+    println(p.errors.mkString("\n"))
+    println(program.string)
+  }
 
 }
