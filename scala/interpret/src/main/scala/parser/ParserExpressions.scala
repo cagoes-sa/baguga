@@ -84,8 +84,13 @@ trait ParserExpressions {
       prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
         case Some(function: PrefixParserFn) => function()
         case None =>
-          withNoPrefixParserFoundFor(cToken)
-          None
+          cToken match {
+            case Some(Token(SEMICOLON, _)) =>
+              None
+            case _ =>
+              withNoPrefixParserFoundFor(cToken)
+              None
+          }
       }
     while ({
       pToken.getOrElse(EOFToken).tokenType match {

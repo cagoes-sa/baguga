@@ -298,7 +298,7 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
   }
 
   "IfElse Expressions" should "be correctly parsed" in {
-    val input = "if (x < y) { let y = x + 1 } else { return y }"
+    val input = "if (x < y) { let y = x + 1; return 5; } else { return y; }"
     val l = Lexer(input)
     val p = Parser(l)
     val program = p.parseProgram()
