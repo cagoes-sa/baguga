@@ -5,10 +5,8 @@ import parser.Parser.EOFToken
 import parser.ast.Expression
 import parser.ast.expressions.ExpressionOrdering._
 import parser.ast.expressions._
-import token.TokenType.{ELSE, EOF, IDENT, LPAREN, RBRACE, RPAREN, SEMICOLON}
+import token.TokenType._
 import token.{Token, TokenType}
-
-import scala.util.control.Breaks.break
 
 trait ParserExpressions {
   parser: Parser with ParserErrors =>
@@ -33,7 +31,8 @@ trait ParserExpressions {
     (TokenType.EQ, parseInfixExpression),
     (TokenType.NOT_EQ, parseInfixExpression),
     (TokenType.LT, parseInfixExpression),
-    (TokenType.GT, parseInfixExpression)
+    (TokenType.GT, parseInfixExpression),
+    (TokenType.LPAREN, parseCallExpression)
   )
   final val precedence: Map[TokenType, ExpressionOrdering] = Map(
     TokenType.EQ -> Equal,
@@ -43,7 +42,8 @@ trait ParserExpressions {
     TokenType.PLUS -> Sum,
     TokenType.MINUS -> Sum,
     TokenType.SLASH -> Product,
-    TokenType.ASTERISK -> Product
+    TokenType.ASTERISK -> Product,
+    TokenType.LPAREN -> Call
   )
 
   def parseExpressionMock(): Some[Expression] = {
@@ -174,6 +174,56 @@ trait ParserExpressions {
       }
     }
     leftExp
+  }
+
+  def parseCallArguments: Option[Seq[Expression]] = {
+    logger.debug(s"Parse Call arguments - ($cToken, $pToken)")
+    (cToken, pToken) match {
+      case (Some(Token(LPAREN, _)), Some(Token(RPAREN, _))) =>
+        parser.nextTokens()
+        Some(Seq.empty[Expression])
+      case (Some(Token(LPAREN, _)), Some(_)) =>
+        var arguments = Seq.empty[Expression]
+        parser.nextTokens()
+        parser.parseExpression(Lowest) match {
+          case Some(expression) =>
+            arguments :+= expression
+            while (
+              pToken match {
+                case Some(Token(COMMA, _)) => true
+                case _                     => false
+              }
+            ) {
+              parser.nextTokens()
+              parser.nextTokens()
+              parser.parseExpression(Lowest) match {
+                case Some(expression) =>
+                  arguments :+= expression
+                case _ =>
+              }
+            }
+            if (!parser.expectPeek(RPAREN)) {
+              None
+            } else {
+              Some(arguments)
+            }
+        }
+      case _ => None
+    }
+  }
+  def parseCallExpression(function: Expression): Option[CallExpression] = {
+    parser.cToken match {
+      case Some(cToken) =>
+        parseCallArguments match {
+          case Some(arguments) =>
+            logger.debug(
+              s"Call Expression with $cToken, $function and $arguments"
+            )
+            Some(CallExpression(cToken, function, arguments))
+          case None => None
+        }
+      case _ => None
+    }
   }
 
   def peekPrecedence: ExpressionOrdering =

@@ -1,7 +1,6 @@
 package parser.ast.statements
 
-import com.typesafe.scalalogging.Logger
-import parser.ast.{Expression, Statement}
+import parser.ast.Statement
 import token.Token
 
 case class BlockStatement(
@@ -13,6 +12,6 @@ case class BlockStatement(
   override def tokenLiteral: String = token.literal
 
   override def string: String = {
-    s"{ ${statements.map(_.string).mkString(";")} }"
+    s"{ ${statements.map(_.string).mkString(";")}; }"
   }
 }
