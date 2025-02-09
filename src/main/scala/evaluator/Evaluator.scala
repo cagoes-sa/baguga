@@ -2,9 +2,9 @@ package evaluator
 
 import com.typesafe.scalalogging.Logger
 import evaluator.objects.BooleanObject.{False, True}
-import evaluator.objects.{BooleanObject, IntegerObject, NullObject, NullObjectConstructor}
+import evaluator.objects.{BooleanObject, IntegerObject, NullObject, NullObjectConstructor, ReturnValue}
 import parser.ast.expressions.{BooleanLiteral, IfExpression, InfixExpression, IntegerLiteral, PrefixExpression}
-import parser.ast.statements.{BlockStatement, ExpressionStatement}
+import parser.ast.statements.{BlockStatement, ExpressionStatement, ReturnStatement}
 import parser.ast.{Node, Program, Statement}
 
 object Evaluator {
@@ -18,11 +18,11 @@ object Evaluator {
         case Some(expression) => Evaluator(expression)
         case _ => None
       }
-      case node: BlockStatement => evalStatements(node.statements)
+      case node: BlockStatement => evalBlockStatement(node)
       case node: IntegerLiteral => Some(IntegerObject(node.value))
       case node: BooleanLiteral => Some(BooleanObject.get(node.value))
       case node: InfixExpression =>
-        (Evaluator(node.left), Evaluator(node.right) ) match {
+        (Evaluator(node.left), Evaluator(node.right)) match {
           case (Some(left), Some(right)) =>
             evalInfixExpression(node.operator, left, right)
           case _ => None
@@ -35,6 +35,11 @@ object Evaluator {
         }
       case node: IfExpression =>
         evalIfExpression(node)
+      case ReturnStatement(_, returnValue) =>
+        Evaluator(returnValue) match {
+          case Some(value) => Some(ReturnValue(value))
+          case _ => None
+        }
 
       case _ => None
     }
@@ -50,30 +55,30 @@ object Evaluator {
   }
 
   def evalIfExpression(expression: IfExpression): Option[Anything] = {
-     Evaluator(expression.condition) match {
-       case Some(condition: BooleanObject) =>
-         if (condition.value) {
-            Evaluator(expression.consequence)
-         } else {
-           expression.alternative match {
-             case Some(alternative) => Evaluator(alternative)
-             case _ => Some(NullObject)
-           }
-         }
-       case Some(_: NullObjectConstructor) =>
-         expression.alternative match {
-           case Some(alternative) => Evaluator(alternative)
-           case _ => Some(NullObject)
-         }
-       case Some(value: IntegerObject) if value.value == 0 =>
-         expression.alternative match {
-           case Some(alternative) => Evaluator(alternative)
-           case _ => Some(NullObject)
-         }
-       case Some(_) =>
-         Evaluator(expression.consequence)
-       case _ => None
-     }
+    Evaluator(expression.condition) match {
+      case Some(condition: BooleanObject) =>
+        if (condition.value) {
+          Evaluator(expression.consequence)
+        } else {
+          expression.alternative match {
+            case Some(alternative) => Evaluator(alternative)
+            case _ => Some(NullObject)
+          }
+        }
+      case Some(_: NullObjectConstructor) =>
+        expression.alternative match {
+          case Some(alternative) => Evaluator(alternative)
+          case _ => Some(NullObject)
+        }
+      case Some(value: IntegerObject) if value.value == 0 =>
+        expression.alternative match {
+          case Some(alternative) => Evaluator(alternative)
+          case _ => Some(NullObject)
+        }
+      case Some(_) =>
+        Evaluator(expression.consequence)
+      case _ => None
+    }
   }
 
   def evalMinusOperator(expression: Anything): Option[Anything] = {
@@ -83,7 +88,7 @@ object Evaluator {
     }
   }
 
-  def evalIntegerInfixExpression(operator: String, left: IntegerObject,  right: IntegerObject): Option[Anything] = {
+  def evalIntegerInfixExpression(operator: String, left: IntegerObject, right: IntegerObject): Option[Anything] = {
     operator match {
       case "+" => Some(IntegerObject(value = left.value + right.value))
       case "-" => Some(IntegerObject(value = left.value - right.value))
@@ -97,7 +102,7 @@ object Evaluator {
     }
   }
 
-  def evalInfixExpression(operator: String, left: Anything,  right: Anything): Option[Anything] = {
+  def evalInfixExpression(operator: String, left: Anything, right: Anything): Option[Anything] = {
     (left, right) match {
       case (left: IntegerObject, right: IntegerObject) => evalIntegerInfixExpression(operator, left, right)
       case _ => operator match {
@@ -116,10 +121,41 @@ object Evaluator {
     }
   }
 
+  def evalBlockStatement(blockStatement: BlockStatement): Option[Anything] = {
+    val statementsEvaluations = blockStatement.statements.map(Evaluator(_))
+
+    if (statementsEvaluations.isEmpty) {
+      None
+    } else {
+      logger.info(s"$statementsEvaluations")
+      statementsEvaluations
+        .reduce(
+          (a, b) => (a, b) match {
+            case (Some(rv: ReturnValue), _) => Some(rv)
+            case (_, Some(b)) => Some(b)
+          }
+        )
+    }
+
+  }
+
   def evalStatements(statements: Seq[Statement]): Option[Anything] = {
-    statements.map(Evaluator(_)).reduceOption((_, b) => b) match {
-      case Some(objectOption) => objectOption
-      case _ => None
+    val statementsEvaluations = statements.map(Evaluator(_))
+
+    if (statementsEvaluations.isEmpty) {
+      None
+    } else {
+      logger.info(s"$statementsEvaluations")
+      statementsEvaluations
+        .reduce(
+          (a, b) => (a, b) match {
+            case (Some(rv: ReturnValue), _) => Some(rv)
+            case (_, Some(b)) => Some(b)
+          }
+        ) match {
+          case Some(returnValue: ReturnValue) => Some(returnValue.value)
+          case other => other
+        }
     }
   }
 
