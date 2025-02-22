@@ -3,14 +3,15 @@ package evaluator
 import com.typesafe.scalalogging.Logger
 import evaluator.objects.BooleanObject.{False, True}
 import evaluator.objects.{BooleanObject, ErrorObject, IntegerObject, NullObject, NullObjectConstructor, ReturnValue}
-import parser.ast.expressions.{BooleanLiteral, IfExpression, InfixExpression, IntegerLiteral, PrefixExpression}
-import parser.ast.statements.{BlockStatement, ExpressionStatement, ReturnStatement}
+import parser.ast.expressions.{BooleanLiteral, Identifier, IfExpression, InfixExpression, IntegerLiteral, PrefixExpression}
+import parser.ast.statements.{BlockStatement, ExpressionStatement, LetStatement, ReturnStatement}
 import parser.ast.{Node, Program, Statement}
 
 case class Evaluator() {
 
   val logger: Logger = Logger(Evaluator.getClass)
   var error: Option[ErrorObject] = None
+  val environment: Environment = new Environment
 
   def evaluate(node: Node): Option[Anything] = {
     node match {
@@ -19,11 +20,23 @@ case class Evaluator() {
         case Some(expression) => evaluate(expression)
         case _ => None
       }
+      case node: LetStatement => evaluate(node.value) match {
+        case Some(e: ErrorObject) => Some(e)
+        case None => None
+        case Some(otherObject: Anything) =>
+          environment.store = environment.store ++ Map(node.name.value -> otherObject)
+          Some(NullObject)
+      }
       case node: BlockStatement => evalBlockStatement(node)
       case node: IntegerLiteral => Some(IntegerObject(node.value))
       case node: BooleanLiteral => Some(BooleanObject.get(node.value))
+      case node: Identifier =>
+        environment.store.get(node.value) match {
+          case Some(objectType: Anything) => Some(objectType)
+          case None => Some(ErrorObject(s"Identifier '${node.value}' not found"))
+        }
       case node: InfixExpression =>
-        (evaluate(node.left), evaluate(node.right))match {
+        (evaluate(node.left), evaluate(node.right)) match {
           case (Some(left), Some(right)) =>
             evalInfixExpression(node.operator, left, right)
           case _ => None
@@ -87,7 +100,7 @@ case class Evaluator() {
       case IntegerObject(value) => Some(IntegerObject(-value))
       case otherObject =>
         error = Some(ErrorObject(s"unknown operator: -${otherObject.objectType.toString}"))
-        Some(NullObject)
+        error
     }
   }
 
@@ -113,7 +126,8 @@ case class Evaluator() {
         case "!=" => Some(BooleanObject(value = left != right))
         case operator: String =>
           error = Some(ErrorObject(s"type mismatch: ${left.objectType.toString} $operator ${right.objectType}"))
-          None
+          error
+
       }
     }
   }
@@ -136,6 +150,7 @@ case class Evaluator() {
       statementsEvaluations
         .reduce(
           (a, b) => (a, b) match {
+            case (Some(e: ErrorObject), _) => Some(e)
             case (Some(rv: ReturnValue), _) => Some(rv)
             case (_, Some(b)) => Some(b)
             case _ => None
@@ -155,14 +170,16 @@ case class Evaluator() {
       statementsEvaluations
         .reduce(
           (a, b) => (a, b) match {
+            case (Some(e: ErrorObject), _) => Some(e)
+            case (_, Some(e: ErrorObject)) => Some(e)
             case (Some(rv: ReturnValue), Some(_)) => Some(rv)
             case (_, Some(b)) => Some(b)
             case _ => None
           }
         ) match {
-          case Some(returnValue: ReturnValue) => Some(returnValue.value)
-          case other => other
-        }
+        case Some(returnValue: ReturnValue) => Some(returnValue.value)
+        case other => other
+      }
     }
   }
 
