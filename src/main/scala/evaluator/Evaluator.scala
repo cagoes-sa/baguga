@@ -28,8 +28,15 @@ case class Evaluator() {
       }
       case node: BlockStatement => evalBlockStatement(node, context)
       case node: IntegerLiteral => Some(IntegerObject(node.value))
-      case node: StringLiteral => Some(StringObject(node.tokenLiteral))
+      case node: StringLiteral => Some(StringObject(node.value))
       case node: BooleanLiteral => Some(BooleanObject.get(node.value))
+      case node: ArrayLiteral =>
+        val evaluatedValues = node.values.map(evaluate(_, context))
+        if (evaluatedValues.exists(value => value.isEmpty || value.exists(_.objectType == ObjectType.Error))) {
+          Some(ErrorObject(s"Failed to evaluate array ${node.string} on ${evaluatedValues.find(_.isEmpty)}"))
+        } else {
+          Some(ArrayObject(evaluatedValues.flatten))
+        }
       case node: FunctionLiteral =>
         Some(FunctionObject(node.parameters, node.body))
       case node: CallExpression =>
@@ -165,10 +172,21 @@ case class Evaluator() {
     }
   }
 
+
+  def evalArrayInfixExpression(operator: String, left: ArrayObject, right: ArrayObject): Option[Anything] = {
+    operator match {
+      case "+" => Some(ArrayObject(values = left.values ++ right.values))
+      case "==" => Some(BooleanObject(value = left.isEqual(right)))
+      case "!=" => Some(BooleanObject(value = left.isEqual(right)))
+      case otherOperand: String => Some(ErrorObject(s"Unsupported operand '$otherOperand' between ${left.objectType.toString} and ${right.objectType.toString}"))
+    }
+  }
+
   def evalInfixExpression(operator: String, left: Anything, right: Anything): Option[Anything] = {
     (left, right) match {
       case (left: IntegerObject, right: IntegerObject) => evalIntegerInfixExpression(operator, left, right)
       case (left: StringObject, right: StringObject) => evalStringInfixExpression(operator, left, right)
+      case (left: ArrayObject, right: ArrayObject) => evalArrayInfixExpression(operator, left, right)
       case (e: ErrorObject, _) => Some(e)
       case (_, e: ErrorObject) => Some(e)
       case _ => operator match {
@@ -196,7 +214,6 @@ case class Evaluator() {
     if (statementsEvaluations.isEmpty) {
       None
     } else {
-      logger.info(s"$statementsEvaluations")
       statementsEvaluations
         .reduce(
           (a, b) => (a, b) match {
@@ -216,7 +233,6 @@ case class Evaluator() {
     if (statementsEvaluations.isEmpty) {
       None
     } else {
-      logger.info(s"$statementsEvaluations")
       statementsEvaluations
         .reduce(
           (a, b) => (a, b) match {

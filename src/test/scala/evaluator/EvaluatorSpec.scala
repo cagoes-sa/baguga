@@ -19,6 +19,12 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
     "\"hey\"" should beEqualTo("hey")
     "\" you need to pick your afro \\\"daddy\\\" \"" should beEqualTo(" you need to pick your afro \\\"daddy\\\" ")
 
+    "[1, 2, \"hey\"]" should beInspectedInto("[1,2,hey]")
+    "[1, 2,[1,2,3,\"hey\"]]" should beInspectedInto("[1,2,[1,2,3,hey]]")
+    "[]" should beInspectedInto("[]")
+    "[[[]]]" should beInspectedInto("[[[]]]")
+    "[[],[]]" should beInspectedInto("[[],[]]")
+
   }
 
   "Prefix expressions" should "be correctly valuated" in {
@@ -103,6 +109,21 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
       |  return 1;
       |}
       |""".stripMargin should failWithMessage("type mismatch: BOOLEAN + BOOLEAN")
+  }
+
+  "Array operations" should "work" in {
+    "[] + [1];" should beInspectedInto("[1]")
+    "[1] + [1, 2, 3];" should beInspectedInto("[1,1,2,3]")
+    "[1,2,3] == [1, 2, 3];" should beInspectedInto("true")
+    "[1,2,3] == [1, 3, 2];" should beInspectedInto("false")
+    """
+      |let addString = fn(array, string) {
+      | return array + [string];
+      |};
+      |let array = [1,2,3];
+      |let string = "hey";
+      |addString(array, string);
+      |""".stripMargin should beInspectedInto("[1,2,3,hey]")
   }
 
   "Let Statements" should "work" in {

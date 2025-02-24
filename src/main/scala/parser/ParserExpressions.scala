@@ -19,6 +19,7 @@ trait ParserExpressions {
     TokenType.INT -> parseInteger,
     TokenType.STR -> parseString,
     TokenType.LPAREN -> parseGroupedExpression,
+    TokenType.LBRACKET -> parseArrayLiteral,
     TokenType.MINUS -> parsePrefixExpression,
     TokenType.TRUE -> parseBoolean,
     TokenType.IF -> parseIfExpression,
@@ -144,7 +145,8 @@ trait ParserExpressions {
   def parseExpression(precedence: ExpressionOrdering): Option[Expression] = {
     var leftExp: Option[Expression] =
       prefixParserFns.get(cToken.getOrElse(EOFToken).tokenType) match {
-        case Some(function: PrefixParserFn) => function()
+        case Some(function: PrefixParserFn) =>
+          function()
         case None =>
           cToken match {
             case Some(Token(SEMICOLON, _)) =>
@@ -157,6 +159,7 @@ trait ParserExpressions {
     while ({
       pToken.getOrElse(EOFToken).tokenType match {
         case SEMICOLON => false
+        case COMMA => false
         case EOF       => false
         case _         => true
       }
@@ -236,6 +239,47 @@ trait ParserExpressions {
     )
   }
 
+  def parseArrayLiteral(): Option[ArrayLiteral] = {
+    logger.debug("Start of array expression")
+    (cToken, pToken) match {
+      case (Some(Token(LBRACKET, _)), Some(Token(RBRACKET, _))) =>
+        parser.nextTokens()
+        Some(ArrayLiteral(cToken.getOrElse(EOFToken), Seq.empty[Expression]))
+      case (Some(Token(LBRACKET, _)), Some(_)) =>
+        var arguments = Seq.empty[Expression]
+        parser.nextTokens()
+        parser.parseExpression(Lowest) match {
+          case None =>
+            None
+
+          case Some(expression) =>
+            arguments :+= expression
+            while (
+              pToken match {
+                case Some(Token(COMMA, _)) =>
+                  true
+                case _                     =>
+                  false
+              }
+            ) {
+              parser.nextTokens()
+              parser.nextTokens()
+              parser.parseExpression(Lowest) match {
+                case Some(expression) =>
+                  arguments :+= expression
+                case _ =>
+              }
+            }
+            if (!parser.expectPeek(RBRACKET)) {
+              None
+            } else {
+              Some(ArrayLiteral(cToken.getOrElse(EOFToken), arguments))
+            }
+        }
+      case _ => None
+    }
+  }
+
   def parseGroupedExpression(): Option[Expression] = {
     logger.debug("Start of grouped expression")
     nextTokens()
@@ -307,7 +351,7 @@ trait ParserExpressions {
   def parseString(): Option[StringLiteral] = {
     cToken match {
       case Some(token) =>
-        Some(StringLiteral(token, token.literal))
+        Some(StringLiteral(token))
       case _ => None
     }
   }
