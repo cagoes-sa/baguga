@@ -6,12 +6,15 @@ import evaluator.objects.BooleanObject.{False, True}
 import evaluator.objects._
 import parser.ast.expressions._
 import parser.ast.statements.{
+  BagugaStatement,
   BlockStatement,
   ExpressionStatement,
   LetStatement,
   ReturnStatement
 }
 import parser.ast.{Expression, Node, Program, Statement}
+import token.Token
+import token.TokenType.BAGUGA
 
 case class Evaluator(initialContext: String) {
 
@@ -38,10 +41,11 @@ case class Evaluator(initialContext: String) {
           case Some(otherObject: Anything) =>
             environment.addObject(context, node.name.value, otherObject)
         }
-      case node: BlockStatement => evalBlockStatement(node, context)
-      case node: IntegerLiteral => Some(IntegerObject(node.value))
-      case node: StringLiteral  => Some(StringObject(node.value))
-      case node: BooleanLiteral => Some(BooleanObject.get(node.value))
+      case node: BlockStatement  => evalBlockStatement(node, context)
+      case node: BagugaStatement => evalBagugaStatement(node, context)
+      case node: IntegerLiteral  => Some(IntegerObject(node.value))
+      case node: StringLiteral   => Some(StringObject(node.value))
+      case node: BooleanLiteral  => Some(BooleanObject.get(node.value))
       case node: ArrayLiteral =>
         val evaluatedValues = node.values.map(evaluate(_, context))
         if (evaluatedValues.exists(value =>
@@ -116,6 +120,28 @@ case class Evaluator(initialContext: String) {
 
       case _ => None
     }
+  }
+
+  def evalBagugaStatement(
+      node: BagugaStatement,
+      context: String
+  ): Option[Anything] = {
+    node.statements
+      .collect {
+        case b: BagugaStatement => b
+      }
+      .reverse
+      .map { bagugaStatement: BagugaStatement =>
+        evalBagugaStatement(bagugaStatement, context)
+      }
+
+    val bagugaBlockStatement =
+      BlockStatement(Token(BAGUGA, "BAGUGA"), node.statements.filter {
+        case _: BagugaStatement => false
+        case _: Statement       => true
+      })
+
+    evalBlockStatement(bagugaBlockStatement, context)
   }
 
   def evaluateFunctionLiteral(
