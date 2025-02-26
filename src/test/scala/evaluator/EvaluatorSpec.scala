@@ -187,4 +187,25 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
       |""".stripMargin should beEqualTo(value = None)
 
   }
+
+  "Baguga Statements" should "run" in {
+    "print(10, \"\n\")" should beEqualTo(value = None)
+
+    """
+      {
+       print(c, a, x);
+      } mas antes {
+       let c = [a];
+      } mas antes {
+       {
+         let a = 5 + x;
+       } mas antes {
+         let x = 5;
+       } BAGUGA;
+      } mas antes {
+       let c = 10;
+      } BAGUGA
+      """.stripMargin should beEqualTo(value = None)
+
+  }
 }
