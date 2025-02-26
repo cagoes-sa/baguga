@@ -327,6 +327,16 @@ class ParserSpec extends AnyFlatSpec with ParserTestUtils {
     program.string shouldEqual "if (x < y)  { x }"
   }
 
+  "Baguga statements" should "be correctly parsed" in {
+    val input = "{ x + 1; y + 1; } mas antes { x + 1; } BAGUGA"
+    val l = Lexer(input)
+    val p = Parser(l)
+    val program = p.parseProgram()
+    p.errors shouldBe Matchers.empty
+    println(program.string)
+    program.string shouldEqual "(x + 1);(y + 1), mas antes ☝\uFE0F(x + 1), mas antes ☝\uFE0F"
+  }
+
   "IfElse Expressions" should "be correctly parsed" in {
     val input = "if (x < y) { let y = x + 1; return 5; } else { return y; }"
     val l = Lexer(input)

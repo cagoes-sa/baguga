@@ -176,7 +176,6 @@ object Lexer {
     "while" -> TokenType.WHILE,
     "mas" -> TokenType.MAS,
     "antes" -> TokenType.ANTES,
-    TokenType.POINTUP.toString -> TokenType.POINTUP,
     TokenType.BAGUGA.toString -> TokenType.BAGUGA
   )
 }
