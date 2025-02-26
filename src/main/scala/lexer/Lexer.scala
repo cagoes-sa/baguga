@@ -165,7 +165,6 @@ case class Lexer(input: String, position: Int = -1, ch: Char = 0)
 }
 
 object Lexer {
-
   final val identifierLookupTable: Map[String, TokenType] = Map(
     "fn" -> TokenType.FUNCTION,
     "return" -> TokenType.RETURN,
@@ -174,6 +173,10 @@ object Lexer {
     "let" -> TokenType.LET,
     "if" -> TokenType.IF,
     "else" -> TokenType.ELSE,
-    "while" -> TokenType.WHILE
+    "while" -> TokenType.WHILE,
+    "mas" -> TokenType.MAS,
+    "antes" -> TokenType.ANTES,
+    TokenType.POINTUP.toString -> TokenType.POINTUP,
+    TokenType.BAGUGA.toString -> TokenType.BAGUGA
   )
 }
