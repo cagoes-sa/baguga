@@ -193,12 +193,15 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
 
     """
       {
-       print(c);
-      }
-       mas antes {
-       let c = [c];
+       print(c, a, x);
       } mas antes {
-       let c = c + 10;
+       let c = [a];
+      } mas antes {
+       {
+         let a = 5 + x;
+       } mas antes {
+         let x = 5;
+       } BAGUGA;
       } mas antes {
        let c = 10;
       } BAGUGA
