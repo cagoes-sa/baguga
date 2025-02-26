@@ -1,6 +1,6 @@
 package token
 
 case class Token(
-    tokenType : TokenType,
+    tokenType: TokenType,
     literal: String
 )
