@@ -206,6 +206,7 @@ trait ParserExpressions {
             } else {
               Some(arguments)
             }
+          case None => None
         }
       case _ => None
     }
