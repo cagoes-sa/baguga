@@ -156,7 +156,9 @@ case class Lexer(input: String, position: Int = -1, ch: Char = 0)
             ),
             nextLexer
           )
-        case _ => (Some(Token(TokenType.ILLEGAL, "")), next)
+        case c =>
+          println(s"Setting $c as illegal")
+          (Some(Token(TokenType.ILLEGAL, "")), next)
       }
     }
 
@@ -176,6 +178,9 @@ object Lexer {
     "while" -> TokenType.WHILE,
     "mas" -> TokenType.MAS,
     "antes" -> TokenType.ANTES,
-    TokenType.BAGUGA.toString -> TokenType.BAGUGA
+    TokenType.BAGUGA.toString -> TokenType.BAGUGA,
+    TokenType.PROXIMA.toString -> TokenType.PROXIMA,
+    TokenType.AI.toString -> TokenType.AI,
+    TokenType.COMEDY.toString -> TokenType.COMEDY
   )
 }

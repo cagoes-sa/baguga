@@ -81,9 +81,19 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
 
   "Return statements" should "be evaluated correctly" in {
     "return 10;" should beEqualTo(10)
+    "proxima ai comedy 20;" should beEqualTo(20)
     "return 10; 9;" should beEqualTo(10)
     "return 2 * 5; 9;" should beEqualTo(10)
     "9; return 2 * 5; 9;" should beEqualTo(10)
+    """
+      |if (10 > 1) {
+      |  if (10 > 1) {
+      |    proxima ai comedy 10;
+      |  }
+      |
+      |  return 1;
+      |}
+      |""".stripMargin should beEqualTo(10)
     """
       |if (10 > 1) {
       |  if (10 > 1) {
@@ -92,7 +102,7 @@ class EvaluatorSpec extends AnyFlatSpec with EvaluatorMatchers {
       |
       |  return 1;
       |}
-      |""" should beEqualTo(10)
+      |""".stripMargin should beEqualTo(10)
   }
 
   "Error Handling" should "work" in {

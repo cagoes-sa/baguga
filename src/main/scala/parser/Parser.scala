@@ -3,13 +3,7 @@ package parser
 import lexer.Lexer
 import parser.Parser.EOFToken
 import parser.ast.expressions.ExpressionOrdering.Lowest
-import parser.ast.statements.{
-  BagugaStatement,
-  BlockStatement,
-  ExpressionStatement,
-  LetStatement,
-  ReturnStatement
-}
+import parser.ast.statements._
 import parser.ast.{Program, Statement}
 import token.TokenType._
 import token.{Token, TokenType}
@@ -23,6 +17,13 @@ case class Parser(lexer: Lexer)
   }
 
   var iteratorCounter: Int = 0
+
+  def nextCToken: Option[Token] = {
+    iteratorCounter += 1
+    if (iteratorCounter < tokens.length)
+      tokens(iteratorCounter).headOption
+    else None
+  }
 
   def cToken: Option[Token] =
     if (iteratorCounter < tokens.length)
@@ -56,10 +57,10 @@ case class Parser(lexer: Lexer)
     var programStatements = Seq.empty[Statement]
     while (cToken.getOrElse(EOFToken).tokenType != EOF) {
       val statement = cToken match {
-        case Some(Token(LET, _))    => parseLetStatement()
-        case Some(Token(RETURN, _)) => parseReturnStatement()
+        case Some(Token(LET, _))     => parseLetStatement()
+        case Some(Token(RETURN, _))  => parseReturnStatement()
+        case Some(Token(PROXIMA, _)) => parseProximaAiComedyStatement()
         case Some(Token(LBRACE, _)) =>
-          println("Aqui")
           parseBagugaStatement()
         case _ =>
           parseExpressionsStatement()
@@ -71,8 +72,9 @@ case class Parser(lexer: Lexer)
   }
 
   def parseStatement(): Option[Statement] = cToken match {
-    case Some(Token(LET, _))    => parseLetStatement()
-    case Some(Token(RETURN, _)) => parseReturnStatement()
+    case Some(Token(LET, _))     => parseLetStatement()
+    case Some(Token(RETURN, _))  => parseReturnStatement()
+    case Some(Token(PROXIMA, _)) => parseProximaAiComedyStatement()
     case Some(Token(LBRACE, _)) =>
       println("Aqui")
       parseBagugaStatement()
@@ -85,7 +87,6 @@ case class Parser(lexer: Lexer)
     val token = cToken
     token match {
       case Some(token) if token.tokenType == LBRACE =>
-        println("Statement hm")
         nextTokens()
         var statements = Seq.empty[Statement]
         while (cToken.getOrElse(EOFToken).tokenType match {
@@ -105,7 +106,6 @@ case class Parser(lexer: Lexer)
                 nextTokens()
                 nextTokens()
                 logger.info(s"$pToken")
-                println("recursive baguga")
                 parseBagugaStatement() match {
                   case Some(statement) =>
                     statements = statements :+ statement
@@ -178,6 +178,19 @@ case class Parser(lexer: Lexer)
         }
       case _ => None
     }
+  }
+
+  def parseProximaAiComedyStatement(): Option[ReturnStatement] = {
+    for {
+      token <- cToken
+      if token.tokenType == TokenType.PROXIMA
+      token <- nextCToken
+      if token.tokenType == TokenType.AI
+      token <- nextCToken
+      if token.tokenType == TokenType.COMEDY
+      _ <- nextCToken
+      value <- parseExpression(Lowest)
+    } yield ReturnStatement(token = token, returnValue = value)
   }
 
   def parseReturnStatement(): Option[ReturnStatement] = {
