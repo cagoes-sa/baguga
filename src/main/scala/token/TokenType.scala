@@ -54,4 +54,8 @@ object TokenType extends Enum[TokenType] {
   object ANTES extends TokenType { override def toString = "antes" }
   object POINTUP extends TokenType { override def toString = "☝\uFE0F" }
   object BAGUGA extends TokenType { override def toString = "BAGUGA" }
+
+  object PROXIMA extends TokenType { override def toString = "proxima" }
+  object AI extends TokenType { override def toString = "ai" }
+  object COMEDY extends TokenType { override def toString = "comedy" }
 }
